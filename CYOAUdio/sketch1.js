@@ -1,16 +1,27 @@
-let piano;
-let guitar;
-let drums;
+let pianoSounds = [];
+let guitarSounds = [];
+let drumSounds = [];
 let playButton;
 let stopButton;
+let pianoNext;
+
+let pianovar;
+let guitarvar;
+let drumvar;
 
 function preload() {
-  piano = loadSound("piano1.mp3");
-  guitar = loadSound("guitar1.mp3");
-  drums = loadSound("drums1.mp3");
+  pianoSounds[0] = loadSound("assets/piano1.mp3");
+  pianoSounds[1] = loadSound("assets/LOD.wav");
+
+  guitarSounds[0] = loadSound("assets/guitar1.mp3");
+  
+  drumSounds[0] = loadSound("assets/drums1.mp3");
 }
 
 function setup() {
+  pianovar = 1;
+  guitarvar = 1;
+  drumvar = 1;
   createCanvas(windowWidth, windowHeight);
 
   playButton = createButton("Play Guitar");
@@ -25,37 +36,80 @@ function setup() {
   playButton.position(width/2 - 20, height/2 - 50);
   playButton.mousePressed(playPiano);
 
+  playButton = createButton("Play All");
+  playButton.position(width/2, height/2 - 150);
+  playButton.mousePressed(playAll);
+
   stopButton = createButton("Stop");
   stopButton.position(width/2, height/2 + 50);
   stopButton.mousePressed(stopMusic);
+
+  pianoNext = createButton("Next Piano Sound");
+  pianoNext.position(width/2, height/2 + 200);
+  pianoNext.mousePressed(pianovar++);
+
+  text(pianovar, width/2, height/2 + 350);
 }
 
 function playGuitar() {
   userStartAudio();
 
-  if (!guitar.isPlaying()) { 
-    guitar.play();
+  let currentGuitar = guitarSounds[guitarvar - 1];
+  if (currentGuitar && !currentGuitar.isPlaying()) {
+    currentGuitar.play();
   }
 }
 
 function playDrums() {
   userStartAudio();
 
-  if (!drums.isPlaying()) { 
-    drums.play();
+  let currentDrums = drumSounds[drumvar - 1];
+  if (currentDrums && !currentDrums.isPlaying()) {
+    currentDrums.play();
   }
 }
 
 function playPiano() {
   userStartAudio();
 
-  if (!piano.isPlaying()) { 
-    piano.play();
+  let currentPiano = pianoSounds[pianovar - 1];
+  if (currentPiano && !currentPiano.isPlaying()) {
+    currentPiano.play();
+  }
+}
+
+function playAll() {
+  userStartAudio();
+
+  let currentPiano = pianoSounds[pianovar - 1];
+  if (currentPiano && !currentPiano.isPlaying()) {
+    currentPiano.play();
+  }
+  
+  let currentDrums = drumSounds[drumvar - 1];
+  if (currentDrums && !currentDrums.isPlaying()) {
+    currentDrums.play();
+  }
+  
+  let currentGuitar = guitarSounds[guitarvar - 1];
+  if (currentGuitar && !currentGuitar.isPlaying()) {
+    currentGuitar.play();
   }
 }
 
 function stopMusic() {
-  guitar.stop();
-  piano.stop();
-  drums.stop();
+  let currentGuitar = guitarSounds[guitarvar - 1];
+  if (currentGuitar) {
+    currentGuitar.stop();
+  }
+  
+  let currentPiano = pianoSounds[pianovar - 1];
+  if (currentPiano) {
+    currentPiano.stop();
+  }
+  
+  let currentDrums = drumSounds[drumvar - 1];
+  if (currentDrums) {
+    currentDrums.stop();
+  }
 }
