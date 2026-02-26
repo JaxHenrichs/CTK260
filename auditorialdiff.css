@@ -1,0 +1,24 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+canvas {
+  display: block;
+  background-color:rgb(157, 181, 204);
+}
+
+button {
+  background-color: #1f5d6b;
+  color: white;
+  border: 2px solid white;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background-color: white;
+  color: #1f5d6b;
+}
