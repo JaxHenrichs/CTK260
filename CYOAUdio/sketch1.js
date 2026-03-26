@@ -1,8 +1,4 @@
-//todo stems names
-// mascot
-// mastering screen with  startover button
-//record feature?
-
+// Variable Definitions
 let pianoSounds = [];
 let guitarSounds = [];
 let drumSounds = [];
@@ -13,22 +9,24 @@ let guitarUI = [];
 
 let nextButton;
 let backButton;
-
 let playAllButton;
-let stopAllButton; 
+let stopAllButton;
 let startOverButton;
 let mixUI = [];
 
-let font;
+let masterVolumeSlider;
+let pitchSlider;
+let masterGain;
 
+let font
 let boombox;
+let state = 0; 
 
-let state = 0;
-// 0 = title
-// 1 = piano
-// 2 = drums
-// 3 = guitar
-// 4 = final
+// 0 title
+// 1 piano
+// 2 drums
+// 3 guitar
+// 4 mastering
 
 function preload() {
   pianoSounds[0] = loadSound("assets/piano1.mp3");
@@ -48,7 +46,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
-  nextButton = createButton("Next");
+  nextButton = createButton("Begin");
   nextButton.size(160, 45);
   nextButton.mousePressed(nextScreen);
 
@@ -64,45 +62,75 @@ function setup() {
   stopAllButton.size(160, 45);
   stopAllButton.mousePressed(stopAllSounds);
 
-  createStemRows(pianoUI, pianoSounds, "Piano");
-  createStemRows(drumUI, drumSounds, "Drum");
-  createStemRows(guitarUI, guitarSounds, "Guitar");
-
   startOverButton = createButton("Start Over");
   startOverButton.size(160, 45);
   startOverButton.mousePressed(resetProject);
-  startOverButton.hide();
+
+  createStemRows(pianoUI, pianoSounds, "Piano");
+  createStemRows(drumUI, drumSounds, "Drum");
+  createStemRows(guitarUI, guitarSounds, "Guitar");
   
+//mastervol setup
+  masterGain = new p5.Gain();
+  masterGain.connect();
+
+let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
+  allSounds.forEach(s => {
+    s.disconnect();
+    s.connect(masterGain);
+  });
+
+  masterVolumeSlider = createSlider(0, 1, 0.5, 0.01);
+  masterVolumeSlider.size(200);
+  masterVolumeSlider.hide();
+
+  pitchSlider = createSlider(0.5, 2.0, 1.0, 0.01);
+  pitchSlider.size(200);
+  pitchSlider.hide();
+
   textFont(font);
   updateUI();
 }
 
 function draw() {
-  background(199,199,218);
   background("#FFC6BD");
 
   if (state === 0) {
     textSize(64);
+    fill(0);
     text("Welcome to Auditorial Differential!", width / 2, height / 2);
   }
 
-  if (state === 1) {
-    drawInstrumentPage("Piano", pianoUI);
-    drawBoombox();
-  }
+  if (state === 1) drawInstrumentPage("Piano", pianoUI);
+  if (state === 2) drawInstrumentPage("Drums", drumUI);
+  if (state === 3) drawInstrumentPage("Guitar", guitarUI);
+  
+if (state === 4) {
+    textSize(64);
+    fill(0);
+    text("Your Selected Stems", width / 2, 80);
 
-  if (state === 2) {
-    drawInstrumentPage("Drums", drumUI);
-  }
+    // Update the Audio based on Sliders
+    masterGain.amp(masterVolumeSlider.value());
+    
+    let speed = pitchSlider.value();
+    let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
+    allSounds.forEach(s => s.rate(speed));
 
-  if (state === 3) {
-    drawInstrumentPage("Guitar", guitarUI);
-  }
+    // Label the Sliders
+    textSize(20);
+    text("Master Volume", masterVolumeSlider.x + 100, masterVolumeSlider.y - 10);
+    text("Pitch / Speed: " + nfc(speed, 2) + "x", pitchSlider.x + 100, pitchSlider.y - 10);
 
-  if (state === 4) {
-    drawMixingUI();
+    if (getSelectedStems().length === 0) {
+      textSize(36);
+      text("No stems selected.", width / 2, height / 2);
+    }
   }
 }
+  
+  if (state === 1) drawBoombox();
+
 
 function drawBoombox() {
   image(boombox, width / 2 + 50, height / 2 - 190, 400, 400);
@@ -110,10 +138,7 @@ function drawBoombox() {
 
 function createStemRows(uiArray, soundArray, label) {
   for (let i = 0; i < 3; i++) {
-    let row = {};
-
-    row.playing = false;
-
+    let row = { playing: false };
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
@@ -123,15 +148,15 @@ function createStemRows(uiArray, soundArray, label) {
 
     row.checkbox = createCheckbox("");
     row.checkbox.addClass("checkbox");
+    row.checkbox.changed(() => handleExclusiveCheck(uiArray, row));
 
     uiArray.push(row);
-
-    row.checkbox.changed(() => handleExclusiveCheck(uiArray, row));
   }
 }
 
 function drawInstrumentPage(title, uiArray) {
   textSize(64);
+  fill(0);
   text(title, width / 2, 80);
 
   let startX = 120;
@@ -139,7 +164,6 @@ function drawInstrumentPage(title, uiArray) {
 
   for (let i = 0; i < uiArray.length; i++) {
     let row = uiArray[i];
-
     row.playButton.position(startX, startY + i * 80);
     row.label.position(startX + 90, startY + 10 + i * 80);
     row.checkbox.position(startX + 290, startY + 10 + i * 80);
@@ -151,7 +175,6 @@ function drawInstrumentPage(title, uiArray) {
 
 function toggleStem(row, soundArray, index) {
   userStartAudio();
-
   if (!soundArray[index]) return;
 
   if (!row.playing) {
@@ -165,13 +188,26 @@ function toggleStem(row, soundArray, index) {
   }
 }
 
+function toggleIndividualStem(row, sound) {
+  userStartAudio();
+  if (!sound) return;
+
+  if (!row.playing) {
+    sound.play();
+    row.playButton.html("Stop");
+    row.playing = true;
+  } else {
+    sound.stop();
+    row.playButton.html("Play");
+    row.playing = false;
+  }
+}
+
 function getSelectedStems() {
   let selected = [];
-
   collectSelected(pianoUI, pianoSounds, "Piano", selected);
   collectSelected(drumUI, drumSounds, "Drum", selected);
   collectSelected(guitarUI, guitarSounds, "Guitar", selected);
-
   return selected;
 }
 
@@ -186,74 +222,55 @@ function collectSelected(uiArray, soundArray, label, selectedArray) {
 function handleExclusiveCheck(uiArray, selectedRow) {
   if (selectedRow.checkbox.checked()) {
     for (let row of uiArray) {
-      if (row !== selectedRow) {
-        row.checkbox.checked(false);
-      }
+      if (row !== selectedRow) row.checkbox.checked(false);
     }
   }
 }
 
 function stopAllSounds() {
-  for (let s of pianoSounds) {
-    if (s && s.isPlaying()) s.stop();
-  }
+  let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
+  allSounds.forEach(s => { if (s && s.isPlaying()) s.stop(); });
 
-  for (let s of drumSounds) {
-    if (s && s.isPlaying()) s.stop();
-  }
-
-  for (let s of guitarSounds) {
-    if (s && s.isPlaying()) s.stop();
-  }
-
-  resetButtons(pianoUI);
-  resetButtons(drumUI);
-  resetButtons(guitarUI);
-  resetButtons(mixUI);
+  [pianoUI, drumUI, guitarUI, mixUI].forEach(resetButtons);
 }
 
 function resetButtons(uiArray) {
   for (let row of uiArray) {
     row.playing = false;
-    row.playButton.html("Play");
+    if (row.playButton) row.playButton.html("Play");
   }
 }
 
 function hideAllUI() {
-  nextButton.hide();
-  backButton.hide();
-  playAllButton.hide();
-  stopAllButton.hide();
-  startOverButton.hide();
-
+  [nextButton, backButton, playAllButton, stopAllButton, startOverButton].forEach(b => b.hide());
   hideGroup(pianoUI);
   hideGroup(drumUI);
   hideGroup(guitarUI);
-
-  for (let row of mixUI) {
+  masterVolumeSlider.hide();
+  pitchSlider.hide();
+  mixUI.forEach(row => {
     row.playButton.hide();
     row.label.hide();
-  }
+  });
 }
 
 function hideGroup(uiArray) {
-  for (let row of uiArray) {
+  uiArray.forEach(row => {
     row.playButton.hide();
     row.label.hide();
     row.checkbox.hide();
-  }
+  });
 }
 
 function showGroup(uiArray) {
-  for (let row of uiArray) {
+  uiArray.forEach(row => {
     row.playButton.show();
     row.label.show();
     row.checkbox.show();
-  }
+  });
 }
 
 function nextScreen() {
-
   if (!selectionMade()) {
     alert("Please select one stem before continuing.");
     return;
@@ -263,96 +280,33 @@ function nextScreen() {
   updateUI();
 }
 
-function selectionMade() {
-  if (state === 0) return true;
-  if (state === 1) return isAnyChecked(pianoUI);
-  if (state === 2) return isAnyChecked(drumUI);
-  if (state === 3) return isAnyChecked(guitarUI);
-
-  return true; 
-}
-
-function isAnyChecked(uiArray) {
-  for (let row of uiArray) {
-    if (row.checkbox.checked()) return true;
-  }
-  return false;
-}
-
 function prevScreen() {
   stopAllSounds();
   if (state > 0) state--;
   updateUI();
 }
 
+function selectionMade() {
+  if (state === 0) return true;
+  if (state === 1) return isAnyChecked(pianoUI);
+  if (state === 2) return isAnyChecked(drumUI);
+  if (state === 3) return isAnyChecked(guitarUI);
+  return true; 
+}
+
+function isAnyChecked(uiArray) {
+  return uiArray.some(row => row.checkbox.checked());
+}
 
 function playAllSelectedStems() {
   userStartAudio();
-
   for (let row of mixUI) {
     if (row.sound) {
       row.sound.stop(); 
       row.sound.play();
-      
       row.playButton.html("Stop");
       row.playing = true;
     }
-  }
-}
-
-function drawMixingUI() {
-  textSize(36);
-  text("Your Selected Stems", width / 2, 100);
-
-  let selected = getSelectedStems();
-  let startX = width / 2 - 150;
-  let startY = 180;
-
-  for (let i = 0; i < mixUI.length; i++) {
-    mixUI[i].playButton.remove();
-    mixUI[i].label.remove();
-  }
-  mixUI = [];
-
-  if (selected.length === 0) {
-    textSize(36);
-    text("No stems selected.", width / 2, height / 2);
-  } else {
-    for (let i = 0; i < selected.length; i++) {
-      let row = {};
-      row.playing = false;
-      row.sound = selected[i].sound; // Store the sound object in the row
-
-      row.playButton = createButton("Play");
-      row.playButton.size(70, 40);
-      row.playButton.position(startX, startY + i * 50);
-      let currentSound = selected[i].sound;
-      row.playButton.mousePressed(() => toggleIndividualStem(row, currentSound));
-
-      row.label = createSpan(selected[i].label);
-      row.label.addClass("label");
-      row.label.position(startX + 90, startY + 10 + i * 50);
-
-      mixUI.push(row);
-    }
-  }
-
-  playAllButton.position(660, height - 100);
-}
-
-function toggleIndividualStem(row, sound) {
-  userStartAudio();
-
-  if (!sound) return;
-
-  if (!row.playing) {
-    sound.play();
-    row.playButton.html("Stop");
-    row.playing = true;
-  } else {
-    sound.stop();
-    row.playButton.html("Play");
-    row.playing = false;
   }
 }
 
@@ -363,106 +317,81 @@ function updateUI() {
     nextButton.html("Begin");
     nextButton.position(300, height - 100);
     nextButton.show();
+  } else {
+    nextButton.html("Next");
   }
 
-  if (state === 1) {
-    showGroup(pianoUI);
-    nextButton.html("Next");
+  if (state >= 1 && state <= 3) {
+    if (state === 1) showGroup(pianoUI);
+    if (state === 2) showGroup(drumUI);
+    if (state === 3) showGroup(guitarUI);
+
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
-    // playAllButton.position(700, height - 100);
     stopAllButton.position(480, height - 100);
 
     nextButton.show();
     backButton.show();
-    // playAllButton.show();
-    stopAllButton.show();
-  }
-
-  if (state === 2) {
-    nextButton.html("Next");
-    showGroup(drumUI);
-    nextButton.position(300, height - 100);
-    backButton.position(120, height - 100);
-    // playAllButton.position(700, height - 100);
-    stopAllButton.position(480,height - 100);
-
-
-    nextButton.show();
-    backButton.show();
-    playAllButton.show();
-    stopAllButton.show();
-
-  }
-
-  if (state === 3) {
-    nextButton.html("Next");
-    showGroup(guitarUI);
-    nextButton.position(300, height - 100);
-    backButton.position(120, height - 100);
-    // playAllButton.position(700, height - 100);
-    stopAllButton.position(480, height - 100);
-
-
-    nextButton.show();
-    backButton.show();
-    // playAllButton.show();
     stopAllButton.show();
   }
 
   if (state === 4) {
+    buildMixingUI();
     backButton.position(120, height - 100);
-    stopAllButton.position(480, height - 100);
     playAllButton.position(660, height - 100);
+    stopAllButton.position(480, height - 100);
+    startOverButton.position(300, height - 100);
+    
+    masterVolumeSlider.position(width - 250, 200);
+    pitchSlider.position(width - 250, 280);
+    masterVolumeSlider.show();
+    pitchSlider.show();
+
     backButton.show();
     playAllButton.show();
     stopAllButton.show();
-    startOverButton.position(300, height - 100);
     startOverButton.show();
+  }
+}
+
+function buildMixingUI() {
+  mixUI.forEach(row => {
+    row.playButton.remove();
+    row.label.remove();
+  });
+  mixUI = [];
+
+  let selected = getSelectedStems();
+  let startX = width / 2 - 150;
+  let startY = 180;
+
+  for (let i = 0; i < selected.length; i++) {
+    let row = { playing: false, sound: selected[i].sound };
+    row.playButton = createButton("Play");
+    row.playButton.size(70, 40);
+    row.playButton.position(startX, startY + i * 50);
+    row.playButton.mousePressed(() => toggleIndividualStem(row, row.sound));
+
+    row.label = createSpan(selected[i].label);
+    row.label.position(startX + 90, startY + 10 + i * 50);
+
+    mixUI.push(row);
   }
 }
 
 function resetProject() {
   stopAllSounds();
-  
-  clearCheckboxes(pianoUI);
-  clearCheckboxes(drumUI);
-  clearCheckboxes(guitarUI);
-  
+  [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => row.checkbox.checked(false)));
   state = 0;
   updateUI();
 }
 
-function clearCheckboxes(uiArray) {
-  for (let row of uiArray) {
-    row.checkbox.checked(false);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function keyPressed() {
   if (key === 'd' || key === 'D') {
-
-    clearCheckboxes(pianoUI);
-    clearCheckboxes(drumUI);
-    clearCheckboxes(guitarUI);
-
+    [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => row.checkbox.checked(false)));
     pianoUI[1].checkbox.checked(true);
     drumUI[1].checkbox.checked(true);
     guitarUI[1].checkbox.checked(true);
-
     state = 4;
     updateUI();
   }
