@@ -20,6 +20,7 @@ let masterGain;
 
 let recorder, soundFile;
 let isRecording = false;
+let recordStartTime; 
 
 let font;
 let boombox;
@@ -127,6 +128,13 @@ function draw() {
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
       row.sound.rate(row.pitchSlider.value() * masterPitchSlider.value());
+    }
+
+    if (isRecording) {
+      let duration = (millis() - recordStartTime) / 1000;
+      fill(255, 0, 0);
+      textSize(24);
+      text("REC: " + nf(duration, 0, 1) + "s", 500, height - 160);
     }
 
     if (getSelectedStems().length === 0) {
@@ -384,7 +392,9 @@ function buildMixingUI() {
 function toggleRecording() {
   userStartAudio();
   if (!isRecording) {
+    soundFile = new p5.SoundFile();
     recorder.record(soundFile);
+    recordStartTime = millis();
     recordButton.html("Stop & Save");
     recordButton.style('background-color', '#ff4d4d');
     isRecording = true;
@@ -393,7 +403,14 @@ function toggleRecording() {
     recordButton.html("Record Mix");
     recordButton.style('background-color', '');
     isRecording = false;
-    saveSound(soundFile, 'my_auditorial_mix.wav');
+    
+    setTimeout(() => {
+      if (soundFile.duration() > 0) {
+        saveSound(soundFile, 'my_auditorial_mix.wav');
+      } else {
+        alert("Recording was too short to save!");
+      }
+    }, 100);
   }
 }
 
