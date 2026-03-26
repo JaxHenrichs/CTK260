@@ -1,3 +1,8 @@
+//todo stems names
+// mascot
+// mastering screen with  startover button
+//record feature?
+
 let pianoSounds = [];
 let guitarSounds = [];
 let drumSounds = [];
@@ -11,6 +16,7 @@ let backButton;
 
 let playAllButton;
 let stopAllButton; 
+let startOverButton;
 let mixUI = [];
 
 let font;
@@ -61,6 +67,11 @@ function setup() {
   createStemRows(pianoUI, pianoSounds, "Piano");
   createStemRows(drumUI, drumSounds, "Drum");
   createStemRows(guitarUI, guitarSounds, "Guitar");
+
+  startOverButton = createButton("Start Over");
+  startOverButton.size(160, 45);
+  startOverButton.mousePressed(resetProject);
+  startOverButton.hide();
   
   textFont(font);
   updateUI();
@@ -213,6 +224,7 @@ function hideAllUI() {
   backButton.hide();
   playAllButton.hide();
   stopAllButton.hide();
+  startOverButton.hide();
 
   hideGroup(pianoUI);
   hideGroup(drumUI);
@@ -252,6 +264,7 @@ function nextScreen() {
 }
 
 function selectionMade() {
+  if (state === 0) return true;
   if (state === 1) return isAnyChecked(pianoUI);
   if (state === 2) return isAnyChecked(drumUI);
   if (state === 3) return isAnyChecked(guitarUI);
@@ -277,8 +290,10 @@ function playAllSelectedStems() {
   userStartAudio();
 
   for (let row of mixUI) {
-    if (row.sound && !row.sound.isPlaying()) {
+    if (row.sound) {
+      row.sound.stop(); 
       row.sound.play();
+      
       row.playButton.html("Stop");
       row.playing = true;
     }
@@ -322,7 +337,7 @@ function drawMixingUI() {
     }
   }
 
-  playAllButton.position(width / 2 - 100, height - 100);
+  playAllButton.position(660, height - 100);
 }
 
 function toggleIndividualStem(row, sound) {
@@ -345,29 +360,32 @@ function updateUI() {
   hideAllUI();
 
   if (state === 0) {
-    nextButton.position(150, height - 100);
+    nextButton.html("Begin");
+    nextButton.position(300, height - 100);
     nextButton.show();
   }
 
   if (state === 1) {
     showGroup(pianoUI);
+    nextButton.html("Next");
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
-    playAllButton.position(480, height - 100);
-    stopAllButton.position(700, height - 100);
+    // playAllButton.position(700, height - 100);
+    stopAllButton.position(480, height - 100);
 
     nextButton.show();
     backButton.show();
-    playAllButton.show();
+    // playAllButton.show();
     stopAllButton.show();
   }
 
   if (state === 2) {
+    nextButton.html("Next");
     showGroup(drumUI);
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
-    playAllButton.position(480, height - 100);
-    stopAllButton.position(700, height - 100);
+    // playAllButton.position(700, height - 100);
+    stopAllButton.position(480,height - 100);
 
 
     nextButton.show();
@@ -378,25 +396,74 @@ function updateUI() {
   }
 
   if (state === 3) {
+    nextButton.html("Next");
     showGroup(guitarUI);
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
-    playAllButton.position(480, height - 100);
-    stopAllButton.position(700, height - 100);
+    // playAllButton.position(700, height - 100);
+    stopAllButton.position(480, height - 100);
 
 
     nextButton.show();
     backButton.show();
-    playAllButton.show();
+    // playAllButton.show();
     stopAllButton.show();
   }
 
   if (state === 4) {
     backButton.position(120, height - 100);
-    stopAllButton.position(width / 2 + 120, height - 100);
+    stopAllButton.position(480, height - 100);
+    playAllButton.position(660, height - 100);
     backButton.show();
     playAllButton.show();
     stopAllButton.show();
+    startOverButton.position(300, height - 100);
+    startOverButton.show();
   }
 }
 
+function resetProject() {
+  stopAllSounds();
+  
+  clearCheckboxes(pianoUI);
+  clearCheckboxes(drumUI);
+  clearCheckboxes(guitarUI);
+  
+  state = 0;
+  updateUI();
+}
+
+function clearCheckboxes(uiArray) {
+  for (let row of uiArray) {
+    row.checkbox.checked(false);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function keyPressed() {
+  if (key === 'd' || key === 'D') {
+
+    clearCheckboxes(pianoUI);
+    clearCheckboxes(drumUI);
+    clearCheckboxes(guitarUI);
+
+    pianoUI[1].checkbox.checked(true);
+    drumUI[1].checkbox.checked(true);
+    guitarUI[1].checkbox.checked(true);
+
+    state = 4;
+    updateUI();
+  }
+}
