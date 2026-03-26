@@ -1,4 +1,3 @@
-// Variable Definitions
 let pianoSounds = [];
 let guitarSounds = [];
 let drumSounds = [];
@@ -12,13 +11,17 @@ let backButton;
 let playAllButton;
 let stopAllButton;
 let startOverButton;
+let recordButton;
 let mixUI = [];
 
 let masterVolumeSlider;
-let pitchSlider;
+let masterPitchSlider;
 let masterGain;
 
-let font
+let recorder, soundFile;
+let isRecording = false;
+
+let font;
 let boombox;
 let state = 0; 
 
@@ -66,27 +69,29 @@ function setup() {
   startOverButton.size(160, 45);
   startOverButton.mousePressed(resetProject);
 
+  recordButton = createButton("Record Mix");
+  recordButton.size(160, 45);
+  recordButton.mousePressed(toggleRecording);
+  recordButton.hide();
+
   createStemRows(pianoUI, pianoSounds, "Piano");
   createStemRows(drumUI, drumSounds, "Drum");
   createStemRows(guitarUI, guitarSounds, "Guitar");
   
-//mastervol setup
   masterGain = new p5.Gain();
   masterGain.connect();
 
-let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
-  allSounds.forEach(s => {
-    s.disconnect();
-    s.connect(masterGain);
-  });
+  recorder = new p5.SoundRecorder();
+  recorder.setInput(masterGain);
+  soundFile = new p5.SoundFile();
 
-  masterVolumeSlider = createSlider(0, 1, 0.5, 0.01);
-  masterVolumeSlider.size(200);
+  masterVolumeSlider = createSlider(0, 1, 0.7, 0.01);
+  masterVolumeSlider.size(150);
   masterVolumeSlider.hide();
 
-  pitchSlider = createSlider(0.5, 2.0, 1.0, 0.01);
-  pitchSlider.size(200);
-  pitchSlider.hide();
+  masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
+  masterPitchSlider.size(150);
+  masterPitchSlider.hide();
 
   textFont(font);
   updateUI();
@@ -101,26 +106,28 @@ function draw() {
     text("Welcome to Auditorial Differential!", width / 2, height / 2);
   }
 
-  if (state === 1) drawInstrumentPage("Piano", pianoUI);
+  if (state === 1) {
+    drawInstrumentPage("Piano", pianoUI);
+    drawBoombox();
+  }
   if (state === 2) drawInstrumentPage("Drums", drumUI);
   if (state === 3) drawInstrumentPage("Guitar", guitarUI);
   
-if (state === 4) {
+  if (state === 4) {
     textSize(64);
     fill(0);
     text("Your Selected Stems", width / 2, 80);
 
-    // Update the Audio based on Sliders
     masterGain.amp(masterVolumeSlider.value());
     
-    let speed = pitchSlider.value();
-    let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
-    allSounds.forEach(s => s.rate(speed));
+    textSize(16);
+    text("Master Vol", masterVolumeSlider.x + 75, masterVolumeSlider.y - 10);
+    text("Master Pitch", masterPitchSlider.x + 75, masterPitchSlider.y - 10);
 
-    // Label the Sliders
-    textSize(20);
-    text("Master Volume", masterVolumeSlider.x + 100, masterVolumeSlider.y - 10);
-    text("Pitch / Speed: " + nfc(speed, 2) + "x", pitchSlider.x + 100, pitchSlider.y - 10);
+    for (let row of mixUI) {
+      row.gainNode.amp(row.volSlider.value());
+      row.sound.rate(row.pitchSlider.value() * masterPitchSlider.value());
+    }
 
     if (getSelectedStems().length === 0) {
       textSize(36);
@@ -128,9 +135,6 @@ if (state === 4) {
     }
   }
 }
-  
-  if (state === 1) drawBoombox();
-
 
 function drawBoombox() {
   image(boombox, width / 2 + 50, height / 2 - 190, 400, 400);
@@ -230,7 +234,6 @@ function handleExclusiveCheck(uiArray, selectedRow) {
 function stopAllSounds() {
   let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
   allSounds.forEach(s => { if (s && s.isPlaying()) s.stop(); });
-
   [pianoUI, drumUI, guitarUI, mixUI].forEach(resetButtons);
 }
 
@@ -242,31 +245,15 @@ function resetButtons(uiArray) {
 }
 
 function hideAllUI() {
-  [nextButton, backButton, playAllButton, stopAllButton, startOverButton].forEach(b => b.hide());
-  hideGroup(pianoUI);
-  hideGroup(drumUI);
-  hideGroup(guitarUI);
-  masterVolumeSlider.hide();
-  pitchSlider.hide();
+  [nextButton, backButton, playAllButton, stopAllButton, startOverButton, masterVolumeSlider, masterPitchSlider, recordButton].forEach(b => b.hide());
+  [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => { 
+    row.playButton.hide(); row.label.hide(); row.checkbox.hide(); 
+  }));
   mixUI.forEach(row => {
     row.playButton.hide();
+    row.volSlider.hide();
+    row.pitchSlider.hide();
     row.label.hide();
-  });
-}
-
-function hideGroup(uiArray) {
-  uiArray.forEach(row => {
-    row.playButton.hide();
-    row.label.hide();
-    row.checkbox.hide();
-  });
-}
-
-function showGroup(uiArray) {
-  uiArray.forEach(row => {
-    row.playButton.show();
-    row.label.show();
-    row.checkbox.show();
   });
 }
 
@@ -317,19 +304,15 @@ function updateUI() {
     nextButton.html("Begin");
     nextButton.position(300, height - 100);
     nextButton.show();
-  } else {
-    nextButton.html("Next");
   }
 
-  if (state >= 1 && state <= 3) {
-    if (state === 1) showGroup(pianoUI);
-    if (state === 2) showGroup(drumUI);
-    if (state === 3) showGroup(guitarUI);
-
+  if (state === 1 || state === 2 || state === 3) {
+    let uis = [null, pianoUI, drumUI, guitarUI];
+    uis[state].forEach(row => { row.playButton.show(); row.label.show(); row.checkbox.show(); });
+    nextButton.html("Next");
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
     stopAllButton.position(480, height - 100);
-
     nextButton.show();
     backButton.show();
     stopAllButton.show();
@@ -338,44 +321,79 @@ function updateUI() {
   if (state === 4) {
     buildMixingUI();
     backButton.position(120, height - 100);
+    nextButton.hide(); 
     playAllButton.position(660, height - 100);
     stopAllButton.position(480, height - 100);
     startOverButton.position(300, height - 100);
+    recordButton.position(300, height - 160);
     
-    masterVolumeSlider.position(width - 250, 200);
-    pitchSlider.position(width - 250, 280);
-    masterVolumeSlider.show();
-    pitchSlider.show();
+    masterVolumeSlider.position(width - 200, 220);
+    masterPitchSlider.position(width - 200, 300);
 
     backButton.show();
     playAllButton.show();
     stopAllButton.show();
     startOverButton.show();
+    recordButton.show();
+    masterVolumeSlider.show();
+    masterPitchSlider.show();
   }
 }
 
 function buildMixingUI() {
   mixUI.forEach(row => {
     row.playButton.remove();
+    row.volSlider.remove();
+    row.pitchSlider.remove();
     row.label.remove();
   });
   mixUI = [];
 
   let selected = getSelectedStems();
-  let startX = width / 2 - 150;
-  let startY = 180;
+  let startX = 120;
+  let startY = 220; 
 
   for (let i = 0; i < selected.length; i++) {
     let row = { playing: false, sound: selected[i].sound };
+    
+    row.gainNode = new p5.Gain();
+    row.gainNode.connect(masterGain);
+    row.sound.disconnect();
+    row.sound.connect(row.gainNode);
+
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
-    row.playButton.position(startX, startY + i * 50);
+    row.playButton.position(startX, startY + i * 80);
     row.playButton.mousePressed(() => toggleIndividualStem(row, row.sound));
 
     row.label = createSpan(selected[i].label);
-    row.label.position(startX + 90, startY + 10 + i * 50);
+    row.label.position(startX + 90, startY + 10 + i * 80);
+
+    row.volSlider = createSlider(0, 1, 0.8, 0.01);
+    row.volSlider.position(startX + 240, startY + 10 + i * 80);
+    row.volSlider.size(120);
+
+    row.pitchSlider = createSlider(0.5, 2.0, 1.0, 0.01);
+    row.pitchSlider.position(startX + 380, startY + 10 + i * 80);
+    row.pitchSlider.size(120);
 
     mixUI.push(row);
+  }
+}
+
+function toggleRecording() {
+  userStartAudio();
+  if (!isRecording) {
+    recorder.record(soundFile);
+    recordButton.html("Stop & Save");
+    recordButton.style('background-color', '#ff4d4d');
+    isRecording = true;
+  } else {
+    recorder.stop();
+    recordButton.html("Record Mix");
+    recordButton.style('background-color', '');
+    isRecording = false;
+    saveSound(soundFile, 'my_auditorial_mix.wav');
   }
 }
 
@@ -389,9 +407,9 @@ function resetProject() {
 function keyPressed() {
   if (key === 'd' || key === 'D') {
     [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => row.checkbox.checked(false)));
-    pianoUI[1].checkbox.checked(true);
-    drumUI[1].checkbox.checked(true);
-    guitarUI[1].checkbox.checked(true);
+    if (pianoUI[1]) pianoUI[1].checkbox.checked(true);
+    if (drumUI[1]) drumUI[1].checkbox.checked(true);
+    if (guitarUI[1]) guitarUI[1].checkbox.checked(true);
     state = 4;
     updateUI();
   }
