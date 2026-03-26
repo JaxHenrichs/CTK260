@@ -32,7 +32,7 @@ function preload() {
   guitarSounds[1] = loadSound("assets/guitar2.wav");
   drumSounds[1] = loadSound("assets/drums2.wav");
   pianoSounds[2] = loadSound("assets/piano3.wav");
-  guitarSounds[2] = loadSound("assets/guitar3.wav");
+  guitarSounds[2] = loadSound("assets/guitar3b.wav");
   drumSounds[2] = loadSound("assets/drums3.wav");
   font = loadFont("assets/Showpop.ttf");
   boombox = loadImage("assets/bunnybox.png");
@@ -71,12 +71,13 @@ function draw() {
   background("#FFC6BD");
 
   if (state === 0) {
-    textSize(40);
+    textSize(64);
     text("Welcome to Auditorial Differential!", width / 2, height / 2);
   }
 
   if (state === 1) {
     drawInstrumentPage("Piano", pianoUI);
+    drawBoombox();
   }
 
   if (state === 2) {
@@ -90,6 +91,10 @@ function draw() {
   if (state === 4) {
     drawMixingUI();
   }
+}
+
+function drawBoombox() {
+  image(boombox, width / 2 + 50, height / 2 - 190, 400, 400);
 }
 
 function createStemRows(uiArray, soundArray, label) {
@@ -115,7 +120,7 @@ function createStemRows(uiArray, soundArray, label) {
 }
 
 function drawInstrumentPage(title, uiArray) {
-  textSize(32);
+  textSize(64);
   text(title, width / 2, 80);
 
   let startX = 120;
@@ -131,10 +136,6 @@ function drawInstrumentPage(title, uiArray) {
 
   backButton.position(120, height - 100);
   nextButton.position(300, height - 100);
-}
-
-function drawBoombox() {
-  image(boombox, width / 2 - 150, height / 2 - 150, 300, 300);
 }
 
 function toggleStem(row, soundArray, index) {
@@ -299,7 +300,7 @@ function drawMixingUI() {
   mixUI = [];
 
   if (selected.length === 0) {
-    textSize(24);
+    textSize(36);
     text("No stems selected.", width / 2, height / 2);
   } else {
     for (let i = 0; i < selected.length; i++) {
@@ -353,11 +354,12 @@ function updateUI() {
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
     playAllButton.position(480, height - 100);
-    drawBoombox();
-    
+    stopAllButton.position(700, height - 100);
+
     nextButton.show();
     backButton.show();
     playAllButton.show();
+    stopAllButton.show();
   }
 
   if (state === 2) {
@@ -365,10 +367,14 @@ function updateUI() {
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
     playAllButton.position(480, height - 100);
+    stopAllButton.position(700, height - 100);
+
 
     nextButton.show();
     backButton.show();
     playAllButton.show();
+    stopAllButton.show();
+
   }
 
   if (state === 3) {
@@ -376,10 +382,13 @@ function updateUI() {
     nextButton.position(300, height - 100);
     backButton.position(120, height - 100);
     playAllButton.position(480, height - 100);
+    stopAllButton.position(700, height - 100);
+
 
     nextButton.show();
     backButton.show();
     playAllButton.show();
+    stopAllButton.show();
   }
 
   if (state === 4) {
