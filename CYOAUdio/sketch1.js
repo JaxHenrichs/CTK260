@@ -33,15 +33,15 @@ let state = 0;
 // 4 mastering
 
 function preload() {
-  pianoSounds[0] = loadSound("assets/piano1.mp3");
-  guitarSounds[0] = loadSound("assets/guitar1.mp3");
-  drumSounds[0] = loadSound("assets/drums1.mp3");
-  pianoSounds[1] = loadSound("assets/piano2.wav");
-  guitarSounds[1] = loadSound("assets/guitar2.wav");
-  drumSounds[1] = loadSound("assets/drums2.wav");
-  pianoSounds[2] = loadSound("assets/piano3.wav");
-  guitarSounds[2] = loadSound("assets/guitar3b.wav");
-  drumSounds[2] = loadSound("assets/drums3.wav");
+  pianoSounds[0] = loadSound("music/piano1.mp3");
+  guitarSounds[0] = loadSound("music/guitar1.mp3");
+  drumSounds[0] = loadSound("music/drums1.mp3");
+  pianoSounds[1] = loadSound("music/piano2.wav");
+  guitarSounds[1] = loadSound("music/guitar2.wav");
+  drumSounds[1] = loadSound("music/drums2.wav");
+  pianoSounds[2] = loadSound("music/piano3.wav");
+  guitarSounds[2] = loadSound("music/guitar3.wav");
+  drumSounds[2] = loadSound("music/drums3.wav");
   font = loadFont("assets/Showpop.ttf");
   boombox = loadImage("assets/bunnybox.png");
 }
