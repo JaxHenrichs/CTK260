@@ -42,6 +42,15 @@ function preload() {
   pianoSounds[2] = loadSound("music/piano3.wav");
   guitarSounds[2] = loadSound("music/guitar3.wav");
   drumSounds[2] = loadSound("music/drums3.wav");
+  pianoSounds[3] = loadSound("music/piano4.mp3");
+  guitarSounds[3] = loadSound("music/guitar4.mp3");
+  drumSounds[3] = loadSound("music/drums4.mp3");
+  pianoSounds[4] = loadSound("music/piano5.wav");
+  guitarSounds[4] = loadSound("music/guitar5.wav");
+  drumSounds[4] = loadSound("music/drums5.wav");
+
+
+
   font = loadFont("assets/Showpop.ttf");
   boombox = loadImage("assets/bunnybox.png");
 }
