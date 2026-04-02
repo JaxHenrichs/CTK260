@@ -2,6 +2,7 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: Montserrat, sans-serif;
+  overflow: hidden;
 }
 canvas {
   background-color:rgb(18, 26, 34);

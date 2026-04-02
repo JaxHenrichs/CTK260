@@ -24,6 +24,7 @@ let recordStartTime;
 
 let font;
 let boombox;
+let titleBg;
 let state = 0; 
 
 // 0 title
@@ -55,6 +56,7 @@ function preload() {
 
   font = loadFont("assets/Showpop.ttf");
   boombox = loadImage("assets/bunnybox.png");
+  titleBg = loadImage("assets/studioroom.png");
 }
 
 function setup() {
@@ -102,7 +104,8 @@ function setup() {
   masterVolumeSlider.hide();
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
-  masterPitchSlider.size(500);
+  masterPitchSlider.size(180); 
+  masterPitchSlider.style('transform', 'rotate(-90deg)');
   masterPitchSlider.hide();
 
   textFont(font);
@@ -110,22 +113,29 @@ function setup() {
 }
 
 function draw() {
-  background("#FFC6BD");
-
   if (state === 0) {
-    textSize(64);
+    background(titleBg);
+    textSize(48);
     fill(0);
-    text("Welcome to Auditory Differential!", width / 2, height / 2);
+    text("Welcome to \nAuditory\nDifferential!", width / 2, height / 4.25);
   }
 
   if (state === 1) {
+    background("#FFC6BD"); 
     drawInstrumentPage("Piano", pianoUI);
-    drawBoombox();
+    drawBoombox();4
   }
-  if (state === 2) drawInstrumentPage("Drums", drumUI);
-  if (state === 3) drawInstrumentPage("Guitar", guitarUI);
+  if (state === 2){
+    background("#FFC6BD"); 
+    drawInstrumentPage("Drums", drumUI);
+  }
+  if (state === 3){
+    background("#FFC6BD"); 
+    drawInstrumentPage("Guitar", guitarUI);
+}
   
   if (state === 4) {
+    background("#FFC6BD"); 
     textSize(64);
     fill(0);
     text("Your Selected Stems", width / 2, 80);
@@ -133,15 +143,15 @@ function draw() {
     masterGain.amp(masterVolumeSlider.value());
     
     textSize(16);
-    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 10);
-    text("Master Pitch", masterPitchSlider.x + 250, masterPitchSlider.y - 10);
+    fill(0);
++    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 15);
+    text("Master Pitch", masterPitchSlider.x + 100, masterPitchSlider.y - 120);
     text("Track Vol", 415, 200);
-    text("Track Pitch", 565, 200);
 
 
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
-      row.sound.rate(row.pitchSlider.value() * masterPitchSlider.value());
+      row.sound.rate(masterPitchSlider.value()); 
     }
 
     if (isRecording) {
@@ -168,8 +178,28 @@ function createStemRows(uiArray, soundArray, label) {
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
-
-    row.label = createSpan(label + " Stem " + (i + 1));
+   
+    let name;
+    if(i == 0){
+      name = "Epic";
+    }
+    if(i == 1){
+      name = "Funky";
+    }
+    if(i == 2){
+      name = "Chill";
+    }
+    if(i == 3){
+      name = "Fast";
+    }
+    if(i == 4){
+      name = "Slow";
+    }
+    if(i == 5){
+      name = "Cool";
+    }
+    row.label = createSpan(name + " " + label);
+    
     row.label.addClass("label");
 
     row.checkbox = createCheckbox("");
@@ -274,7 +304,6 @@ function hideAllUI() {
   mixUI.forEach(row => {
     row.playButton.hide();
     row.volSlider.hide();
-    row.pitchSlider.hide();
     row.label.hide();
   });
 }
@@ -349,8 +378,9 @@ function updateUI() {
     startOverButton.position(300, height - 75);
     recordButton.position(480, height - 160);
     
-    masterVolumeSlider.position(120, 500);
-    masterPitchSlider.position(120, 600);
+    masterVolumeSlider.position(120, 475);
+    
+    masterPitchSlider.position(500, 320);
 
     backButton.show();
     playAllButton.show();
@@ -366,7 +396,6 @@ function buildMixingUI() {
   mixUI.forEach(row => {
     row.playButton.remove();
     row.volSlider.remove();
-    row.pitchSlider.remove();
     row.label.remove();
   });
   mixUI = [];
@@ -394,10 +423,6 @@ function buildMixingUI() {
     row.volSlider = createSlider(0, 1, 0.8, 0.01);
     row.volSlider.position(startX + 240, startY + 10 + i * 80);
     row.volSlider.size(120);
-
-    row.pitchSlider = createSlider(0.5, 2.0, 1.0, 0.01);
-    row.pitchSlider.position(startX + 380, startY + 10 + i * 80);
-    row.pitchSlider.size(120);
 
     mixUI.push(row);
   }
