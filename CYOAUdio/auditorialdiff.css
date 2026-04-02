@@ -1,7 +1,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  /* font-family: Montserrat, sans-serif; */
+  font-family: Montserrat, sans-serif;
 }
 canvas {
   background-color:rgb(18, 26, 34);

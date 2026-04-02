@@ -48,7 +48,9 @@ function preload() {
   pianoSounds[4] = loadSound("music/piano5.wav");
   guitarSounds[4] = loadSound("music/guitar5.wav");
   drumSounds[4] = loadSound("music/drums5.wav");
-
+  pianoSounds[5] = loadSound("music/piano6.wav");
+  guitarSounds[5] = loadSound("music/guitar6.wav");
+  drumSounds[5] = loadSound("music/drums6.wav");
 
 
   font = loadFont("assets/Showpop.ttf");
@@ -68,7 +70,7 @@ function setup() {
   backButton.mousePressed(prevScreen);
 
   playAllButton = createButton("Play All Selected Stems");
-  playAllButton.size(200, 45);
+  playAllButton.size(340, 45);
   playAllButton.mousePressed(playAllSelectedStems);
 
   stopAllButton = createButton("Stop All");
@@ -96,11 +98,11 @@ function setup() {
   soundFile = new p5.SoundFile();
 
   masterVolumeSlider = createSlider(0, 1, 0.7, 0.01);
-  masterVolumeSlider.size(150);
+  masterVolumeSlider.size(500);
   masterVolumeSlider.hide();
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
-  masterPitchSlider.size(150);
+  masterPitchSlider.size(500);
   masterPitchSlider.hide();
 
   textFont(font);
@@ -113,7 +115,7 @@ function draw() {
   if (state === 0) {
     textSize(64);
     fill(0);
-    text("Welcome to Auditorial Differential!", width / 2, height / 2);
+    text("Welcome to Auditory Differential!", width / 2, height / 2);
   }
 
   if (state === 1) {
@@ -131,8 +133,11 @@ function draw() {
     masterGain.amp(masterVolumeSlider.value());
     
     textSize(16);
-    text("Master Vol", masterVolumeSlider.x + 75, masterVolumeSlider.y - 10);
-    text("Master Pitch", masterPitchSlider.x + 75, masterPitchSlider.y - 10);
+    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 10);
+    text("Master Pitch", masterPitchSlider.x + 250, masterPitchSlider.y - 10);
+    text("Track Vol", 415, 200);
+    text("Track Pitch", 565, 200);
+
 
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
@@ -142,8 +147,8 @@ function draw() {
     if (isRecording) {
       let duration = (millis() - recordStartTime) / 1000;
       fill(255, 0, 0);
-      textSize(24);
-      text("REC: " + nf(duration, 0, 1) + "s", 500, height - 160);
+      textSize(36);
+      text("RECORDING: " + nf(duration, 0, 1) + "s", 400, height - 200);
     }
 
     if (getSelectedStems().length === 0) {
@@ -158,7 +163,7 @@ function drawBoombox() {
 }
 
 function createStemRows(uiArray, soundArray, label) {
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 6; i++) {
     let row = { playing: false };
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
@@ -190,8 +195,8 @@ function drawInstrumentPage(title, uiArray) {
     row.checkbox.position(startX + 290, startY + 10 + i * 80);
   }
 
-  backButton.position(120, height - 100);
-  nextButton.position(300, height - 100);
+  backButton.position(120, height - 75);
+  nextButton.position(300, height - 75);
 }
 
 function toggleStem(row, soundArray, index) {
@@ -319,7 +324,7 @@ function updateUI() {
 
   if (state === 0) {
     nextButton.html("Begin");
-    nextButton.position(300, height - 100);
+    nextButton.position(300, height - 75);
     nextButton.show();
   }
 
@@ -327,9 +332,9 @@ function updateUI() {
     let uis = [null, pianoUI, drumUI, guitarUI];
     uis[state].forEach(row => { row.playButton.show(); row.label.show(); row.checkbox.show(); });
     nextButton.html("Next");
-    nextButton.position(300, height - 100);
-    backButton.position(120, height - 100);
-    stopAllButton.position(480, height - 100);
+    nextButton.position(300, height - 75);
+    backButton.position(120, height - 75);
+    stopAllButton.position(480, height - 75);
     nextButton.show();
     backButton.show();
     stopAllButton.show();
@@ -337,15 +342,15 @@ function updateUI() {
 
   if (state === 4) {
     buildMixingUI();
-    backButton.position(120, height - 100);
+    backButton.position(120, height - 75);
     nextButton.hide(); 
-    playAllButton.position(660, height - 100);
-    stopAllButton.position(480, height - 100);
-    startOverButton.position(300, height - 100);
-    recordButton.position(300, height - 160);
+    playAllButton.position(120, height - 160);
+    stopAllButton.position(480, height - 75);
+    startOverButton.position(300, height - 75);
+    recordButton.position(480, height - 160);
     
-    masterVolumeSlider.position(width - 200, 220);
-    masterPitchSlider.position(width - 200, 300);
+    masterVolumeSlider.position(120, 500);
+    masterPitchSlider.position(120, 600);
 
     backButton.show();
     playAllButton.show();
@@ -415,9 +420,9 @@ function toggleRecording() {
     
     setTimeout(() => {
       if (soundFile.duration() > 0) {
-        saveSound(soundFile, 'my_auditorial_mix.wav');
+        saveSound(soundFile, 'MyMix.wav');
       } else {
-        alert("Recording was too short to save!");
+        alert("No audio was recorded. Please make sure to jam out and play some stems while recording.");
       }
     }, 100);
   }
