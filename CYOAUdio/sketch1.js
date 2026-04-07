@@ -149,7 +149,7 @@ function draw() {
     background("#333333"); 
     textSize(64);
     fill(255);
-    text("Your Selected Stems", width / 2, 80);
+    text("Mixing Booth", width / 2, 80);
 
     masterGain.amp(masterVolumeSlider.value());
     
@@ -176,6 +176,12 @@ function draw() {
       text("No stems selected.", width / 2, height / 2);
     }
   }
+
+  fill(255);
+  textSize(14);
+  textAlign(RIGHT, BOTTOM);
+  text("Browser size: " + windowWidth + " x " + windowHeight, width - 15, height - 15);
+  textAlign(CENTER, CENTER);
 }
 
 function drawBoombox() {
@@ -264,7 +270,8 @@ function getSelectedStems() {
 function collectSelected(uiArray, soundArray, label, selectedArray) {
   for (let i = 0; i < uiArray.length; i++) {
     if (uiArray[i].checkbox.checked()) {
-      selectedArray.push({ label: label + " Stem " + (i + 1), sound: soundArray[i] });
+      let actualName = uiArray[i].label.html(); 
+      selectedArray.push({ label: actualName, sound: soundArray[i] });
     }
   }
 }
@@ -461,11 +468,7 @@ function resetProject() {
   updateUI();
 }
 
-function mouseMoved() {
-  if (state === 0) {
-    nextScreen();
-  }
-}
+
 
 function mouseMoved() {
   if (state === 0) {
