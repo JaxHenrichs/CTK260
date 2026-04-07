@@ -3,13 +3,16 @@ html, body {
   padding: 0;
   font-family: Montserrat, sans-serif;
   overflow: hidden;
+  color: white;
+    /* text-shadow: 0 0 8px #dedede; */
+
 }
 canvas {
-  background-color:rgb(18, 26, 34);
+  background-color:rgb(255, 255, 255);
 }
 
 button {
-  background-color: #9B5DE5;
+  background-color: #8338EC;
   color: white;
   border: 2px solid rgb(0, 0, 0);
   font-size: 16px;
@@ -17,11 +20,13 @@ button {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s ease-in;
+  font-family: Montserrat, sans-serif;
+    text-shadow: 0 0 8px #dedede;
 }
 
 button:hover {
   background-color: white;
-  color: #683f99;
+  color: #8338EC;
   font-weight:bold;
 }
 
@@ -33,16 +38,17 @@ button:hover {
   border-radius: 4px;
   background-color: white;
   cursor:pointer;
+  
 }
 
 .checkbox input[type="checkbox"]:checked {
-  background-color: #1f5d6b;
-  border-color: #000000;
+  background-color: #41EAD4;
+  border-color: #333333;
 }
 
 .checkbox input[type="checkbox"]:checked::after {
   content: "✓";
-  color: white;
+  color: rgb(#333333);
   font-size: 14px;
   position: relative;
   top: 0;
@@ -66,3 +72,49 @@ button:hover {
 h1,h2,h3,h4,h5,h6,p,label{
   font-family: Montserrat, sans-serif;
 }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  border-radius: 5px;
+  height: 8px;
+}
+
+input[type="range"]::-webkit-slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #8338EC var(--fill-percent), #ffffff var(--fill-percent));
+  height: 8px;
+  border-radius: 5px;
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #FF006E;
+  cursor: pointer;
+  border: 2px solid #00d9ff;
+}
+
+input[type="range"]::-moz-range-track {
+  background: linear-gradient(to right, #8338EC var(--fill-percent), #ffffff var(--fill-percent));
+  height: 8px;
+  border-radius: 5px;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #FF006E;
+  cursor: pointer;
+  border: 4px solid #000000;
+  
+}
+

@@ -24,14 +24,11 @@ let recordStartTime;
 
 let font;
 let boombox;
+let boombox2;
 let titleBg;
 let state = 0; 
 
-// 0 title
-// 1 piano
-// 2 drums
-// 3 guitar
-// 4 mastering
+let totalMovement = 0; // Tracks how much the mouse has moved
 
 function preload() {
   pianoSounds[0] = loadSound("music/piano1.mp3");
@@ -53,9 +50,9 @@ function preload() {
   guitarSounds[5] = loadSound("music/guitar6.wav");
   drumSounds[5] = loadSound("music/drums6.wav");
 
-
   font = loadFont("assets/Showpop.ttf");
   boombox = loadImage("assets/bunnybox.png");
+  boombox2 = loadImage("assets/PinkBunnyBox.png");
   titleBg = loadImage("assets/studioroom.png");
 }
 
@@ -102,11 +99,23 @@ function setup() {
   masterVolumeSlider = createSlider(0, 1, 0.7, 0.01);
   masterVolumeSlider.size(500);
   masterVolumeSlider.hide();
+  masterVolumeSlider.input(() => {
+    let val = masterVolumeSlider.value();
+    let percent = (val * 100) + '%';
+    masterVolumeSlider.elt.style.setProperty('--fill-percent', percent);
+  });
+  masterVolumeSlider.elt.style.setProperty('--fill-percent', '70%');
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
   masterPitchSlider.size(180); 
   masterPitchSlider.style('transform', 'rotate(-90deg)');
   masterPitchSlider.hide();
+  masterPitchSlider.input(() => {
+    let val = masterPitchSlider.value();
+    let percent = (((val - 0.5) / 1) * 100) + '%';
+    masterPitchSlider.elt.style.setProperty('--fill-percent', percent);
+  });
+  masterPitchSlider.elt.style.setProperty('--fill-percent', '50%');
 
   textFont(font);
   updateUI();
@@ -116,38 +125,39 @@ function draw() {
   if (state === 0) {
     background(titleBg);
     textSize(48);
-    fill(0);
-    text("Welcome to \nAuditory\nDifferential!", width / 2, height / 4.25);
+    color(0);
+    text("Welcome to \nAuditory\nDifferential!", width / 2, height / 5);
+    textSize(18);
+    text("Move your mouse or press any key to begin", width / 2, height / 2.6);
   }
 
   if (state === 1) {
-    background("#FFC6BD"); 
+    background("#333333"); 
     drawInstrumentPage("Piano", pianoUI);
-    drawBoombox();4
+    drawBoombox();
   }
   if (state === 2){
-    background("#FFC6BD"); 
+    background("#333333"); 
     drawInstrumentPage("Drums", drumUI);
   }
   if (state === 3){
-    background("#FFC6BD"); 
+    background("#333333"); 
     drawInstrumentPage("Guitar", guitarUI);
-}
+  }
   
   if (state === 4) {
-    background("#FFC6BD"); 
+    background("#333333"); 
     textSize(64);
-    fill(0);
+    fill(255);
     text("Your Selected Stems", width / 2, 80);
 
     masterGain.amp(masterVolumeSlider.value());
     
     textSize(16);
-    fill(0);
-+    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 15);
+    fill(255);
+    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 15);
     text("Master Pitch", masterPitchSlider.x + 100, masterPitchSlider.y - 120);
     text("Track Vol", 415, 200);
-
 
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
@@ -169,7 +179,7 @@ function draw() {
 }
 
 function drawBoombox() {
-  image(boombox, width / 2 + 50, height / 2 - 190, 400, 400);
+  image(boombox2, width / 2 + 50, height / 2 - 190, 400, 400);
 }
 
 function createStemRows(uiArray, soundArray, label) {
@@ -180,26 +190,10 @@ function createStemRows(uiArray, soundArray, label) {
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
    
     let name;
-    if(i == 0){
-      name = "Epic";
-    }
-    if(i == 1){
-      name = "Funky";
-    }
-    if(i == 2){
-      name = "Chill";
-    }
-    if(i == 3){
-      name = "Fast";
-    }
-    if(i == 4){
-      name = "Slow";
-    }
-    if(i == 5){
-      name = "Cool";
-    }
-    row.label = createSpan(name + " " + label);
+    let names = ["Epic", "Funky", "Chill", "Fast", "Slow", "Cool"];
+    name = names[i];
     
+    row.label = createSpan(name + " " + label);
     row.label.addClass("label");
 
     row.checkbox = createCheckbox("");
@@ -212,7 +206,7 @@ function createStemRows(uiArray, soundArray, label) {
 
 function drawInstrumentPage(title, uiArray) {
   textSize(64);
-  fill(0);
+  fill(255);
   text(title, width / 2, 80);
 
   let startX = 120;
@@ -352,9 +346,9 @@ function updateUI() {
   hideAllUI();
 
   if (state === 0) {
-    nextButton.html("Begin");
-    nextButton.position(300, height - 75);
-    nextButton.show();
+    // nextButton.html("Begin");
+    // nextButton.position(300, height - 75);
+    // nextButton.show();
   }
 
   if (state === 1 || state === 2 || state === 3) {
@@ -379,7 +373,6 @@ function updateUI() {
     recordButton.position(480, height - 160);
     
     masterVolumeSlider.position(120, 475);
-    
     masterPitchSlider.position(500, 320);
 
     backButton.show();
@@ -419,10 +412,18 @@ function buildMixingUI() {
 
     row.label = createSpan(selected[i].label);
     row.label.position(startX + 90, startY + 10 + i * 80);
+    row.label.style('font-family', 'Montserrat, sans-serif');
+    row.label.style('font-weight', 'bold');
 
     row.volSlider = createSlider(0, 1, 0.8, 0.01);
     row.volSlider.position(startX + 240, startY + 10 + i * 80);
     row.volSlider.size(120);
+    row.volSlider.input(() => {
+      let val = row.volSlider.value();
+      let percent = (val * 100) + '%';
+      row.volSlider.elt.style.setProperty('--fill-percent', percent);
+    });
+    row.volSlider.elt.style.setProperty('--fill-percent', '80%');
 
     mixUI.push(row);
   }
@@ -460,7 +461,30 @@ function resetProject() {
   updateUI();
 }
 
+function mouseMoved() {
+  if (state === 0) {
+    nextScreen();
+  }
+}
+
+function mouseMoved() {
+  if (state === 0) {
+    let d = dist(mouseX, mouseY, pmouseX, pmouseY);
+    totalMovement += d;
+
+    if (totalMovement > 500) {
+      nextScreen();
+      totalMovement = 0;
+    }
+  }
+}
+
 function keyPressed() {
+  if (state === 0) {
+    nextScreen();
+    return;
+  }
+
   if (key === 'd' || key === 'D') {
     [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => row.checkbox.checked(false)));
     if (pianoUI[1]) pianoUI[1].checkbox.checked(true);
@@ -468,5 +492,9 @@ function keyPressed() {
     if (guitarUI[1]) guitarUI[1].checkbox.checked(true);
     state = 4;
     updateUI();
+  }
+
+  if (key === 'r' || key === 'R') {
+    location.reload();
   }
 }
