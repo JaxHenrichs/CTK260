@@ -28,7 +28,7 @@ let boombox2;
 let titleBg;
 let instrumentBg;
 let state = 0; // 0: Title, 1: Instructions, 2: Piano, 3: Drums, 4: Guitar, 5: Mix
-let bbpiano, bbdrums, bbguitar;
+let bbpiano, bbdrums, bbguitar,bbmaster;
 
 let totalMovement = 100;
 
@@ -56,6 +56,8 @@ function preload() {
   titleBg = loadImage("assets/testerfrontbg.jpg");
   instrumentBg = loadImage("assets/instrumentpage.jpg")
   bbdrums = loadImage("assets/BBdrums.png");
+  bbmaster = loadImage("assets/BBmaster.png");
+
 }
 
 function setup() {
@@ -143,6 +145,7 @@ function draw() {
   }
   if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
+
   }
 
   if (state === 5) {
@@ -150,6 +153,7 @@ function draw() {
     textSize(64);
     fill(255);
     text("Mixing Booth", width / 2, 80);
+    image(bbmaster, 800,100, 417, 597);
 
     masterGain.amp(masterVolumeSlider.value());
 
@@ -177,7 +181,6 @@ function draw() {
     }
   }
 
-  // Footer text
   fill(255);
   textSize(14);
   textAlign(RIGHT, BOTTOM);
