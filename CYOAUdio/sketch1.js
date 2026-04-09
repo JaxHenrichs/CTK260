@@ -193,7 +193,7 @@ function createStemRows(uiArray, soundArray, label) {
     row.playButton.size(70, 40);
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
 
-    let names = ["Epic", "Funky", "Chill", "Fast", "Groovy", "Rock"];
+    let names = ["Epic", "Funky", "Chill", "Jazzy", "Groovy", "Rock"];
     let name = names[i];
 
     row.label = createSpan(name + " " + label);
