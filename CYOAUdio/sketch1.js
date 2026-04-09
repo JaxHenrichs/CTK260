@@ -20,15 +20,17 @@ let masterGain;
 
 let recorder, soundFile;
 let isRecording = false;
-let recordStartTime; 
+let recordStartTime;
 
 let font;
 let boombox;
 let boombox2;
 let titleBg;
-let state = 0; 
+let instrumentBg;
+let state = 0; // 0: Title, 1: Instructions, 2: Piano, 3: Drums, 4: Guitar, 5: Mix
+let bbpiano, bbdrums, bbguitar;
 
-let totalMovement = 0; // Tracks how much the mouse has moved
+let totalMovement = 100;
 
 function preload() {
   pianoSounds[0] = loadSound("music/piano1.mp3");
@@ -51,9 +53,9 @@ function preload() {
   drumSounds[5] = loadSound("music/drums6.wav");
 
   font = loadFont("assets/Showpop.ttf");
-  boombox = loadImage("assets/bunnybox.png");
-  boombox2 = loadImage("assets/PinkBunnyBox.png");
-  titleBg = loadImage("assets/studioroom.png");
+  titleBg = loadImage("assets/testerfrontbg.jpg");
+  instrumentBg = loadImage("assets/instrumentpage.jpg")
+  bbdrums = loadImage("assets/BBdrums.png");
 }
 
 function setup() {
@@ -88,7 +90,7 @@ function setup() {
   createStemRows(pianoUI, pianoSounds, "Piano");
   createStemRows(drumUI, drumSounds, "Drum");
   createStemRows(guitarUI, guitarSounds, "Guitar");
-  
+
   masterGain = new p5.Gain();
   masterGain.connect();
 
@@ -99,23 +101,11 @@ function setup() {
   masterVolumeSlider = createSlider(0, 1, 0.7, 0.01);
   masterVolumeSlider.size(500);
   masterVolumeSlider.hide();
-  masterVolumeSlider.input(() => {
-    let val = masterVolumeSlider.value();
-    let percent = (val * 100) + '%';
-    masterVolumeSlider.elt.style.setProperty('--fill-percent', percent);
-  });
-  masterVolumeSlider.elt.style.setProperty('--fill-percent', '70%');
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
-  masterPitchSlider.size(180); 
+  masterPitchSlider.size(180);
   masterPitchSlider.style('transform', 'rotate(-90deg)');
   masterPitchSlider.hide();
-  masterPitchSlider.input(() => {
-    let val = masterPitchSlider.value();
-    let percent = (((val - 0.5) / 1) * 100) + '%';
-    masterPitchSlider.elt.style.setProperty('--fill-percent', percent);
-  });
-  masterPitchSlider.elt.style.setProperty('--fill-percent', '50%');
 
   textFont(font);
   updateUI();
@@ -124,35 +114,45 @@ function setup() {
 function draw() {
   if (state === 0) {
     background(titleBg);
-    textSize(48);
-    color(0);
-    text("Welcome to \nAuditory\nDifferential!", width / 2, height / 5);
+    textSize(110);
+    fill(255);
+    text("Bunnybox\nStudio", width / 2, height / 3.5);
     textSize(18);
-    text("Move your mouse or press any key to begin", width / 2, height / 2.6);
+    text("Move your mouse or press any key to begin", width / 2, height / 1.9);
   }
 
   if (state === 1) {
-    background("#333333"); 
+    background("#333333");
+    fill(255);
+    textSize(64);
+    text("Instructions", width / 2, 100);
+    textSize(24);
+    let instr = "1. Preview sounds on the following pages.\n" +
+                "2. Check the box of the loop you like best.\n" +
+                "3. Mix your final track in the Mixing Booth!\n\n" +
+                "Press 'Next' to select your Piano.";
+    text(instr, width / 2, height / 2 - 20);
+  }
+
+  if (state === 2) {
     drawInstrumentPage("Piano", pianoUI);
-    drawBoombox();
   }
-  if (state === 2){
-    background("#333333"); 
+  if (state === 3) {
     drawInstrumentPage("Drums", drumUI);
+    image(bbdrums, 650,25, 900, 900);
   }
-  if (state === 3){
-    background("#333333"); 
+  if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
   }
-  
-  if (state === 4) {
-    background("#333333"); 
+
+  if (state === 5) {
+    background("#333333");
     textSize(64);
     fill(255);
     text("Mixing Booth", width / 2, 80);
 
     masterGain.amp(masterVolumeSlider.value());
-    
+
     textSize(16);
     fill(255);
     text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 15);
@@ -161,7 +161,7 @@ function draw() {
 
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
-      row.sound.rate(masterPitchSlider.value()); 
+      row.sound.rate(masterPitchSlider.value());
     }
 
     if (isRecording) {
@@ -177,6 +177,7 @@ function draw() {
     }
   }
 
+  // Footer text
   fill(255);
   textSize(14);
   textAlign(RIGHT, BOTTOM);
@@ -184,9 +185,6 @@ function draw() {
   textAlign(CENTER, CENTER);
 }
 
-function drawBoombox() {
-  image(boombox2, width / 2 + 50, height / 2 - 190, 400, 400);
-}
 
 function createStemRows(uiArray, soundArray, label) {
   for (let i = 0; i < 6; i++) {
@@ -194,11 +192,10 @@ function createStemRows(uiArray, soundArray, label) {
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
-   
-    let name;
+
     let names = ["Epic", "Funky", "Chill", "Fast", "Slow", "Cool"];
-    name = names[i];
-    
+    let name = names[i];
+
     row.label = createSpan(name + " " + label);
     row.label.addClass("label");
 
@@ -211,6 +208,8 @@ function createStemRows(uiArray, soundArray, label) {
 }
 
 function drawInstrumentPage(title, uiArray) {
+  background("#333333");
+  background(instrumentBg);
   textSize(64);
   fill(255);
   text(title, width / 2, 80);
@@ -220,13 +219,10 @@ function drawInstrumentPage(title, uiArray) {
 
   for (let i = 0; i < uiArray.length; i++) {
     let row = uiArray[i];
-    row.playButton.position(startX, startY + i * 80);
-    row.label.position(startX + 90, startY + 10 + i * 80);
+    row.playButton.position(startX, startY + i * 81);
+    row.label.position(startX + 90, startY + 10 + i * 79.5);
     row.checkbox.position(startX + 290, startY + 10 + i * 80);
   }
-
-  backButton.position(120, height - 75);
-  nextButton.position(300, height - 75);
 }
 
 function toggleStem(row, soundArray, index) {
@@ -270,7 +266,7 @@ function getSelectedStems() {
 function collectSelected(uiArray, soundArray, label, selectedArray) {
   for (let i = 0; i < uiArray.length; i++) {
     if (uiArray[i].checkbox.checked()) {
-      let actualName = uiArray[i].label.html(); 
+      let actualName = uiArray[i].label.html();
       selectedArray.push({ label: actualName, sound: soundArray[i] });
     }
   }
@@ -299,14 +295,15 @@ function resetButtons(uiArray) {
 
 function hideAllUI() {
   [nextButton, backButton, playAllButton, stopAllButton, startOverButton, masterVolumeSlider, masterPitchSlider, recordButton].forEach(b => b.hide());
-  [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => { 
-    row.playButton.hide(); row.label.hide(); row.checkbox.hide(); 
+  [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => {
+    row.playButton.hide(); row.label.hide(); row.checkbox.hide();
   }));
   mixUI.forEach(row => {
     row.playButton.hide();
     row.volSlider.hide();
     row.label.hide();
   });
+  fill(255);
 }
 
 function nextScreen() {
@@ -315,7 +312,7 @@ function nextScreen() {
     return;
   }
   stopAllSounds();
-  if (state < 4) state++;
+  if (state < 5) state++;
   updateUI();
 }
 
@@ -326,11 +323,11 @@ function prevScreen() {
 }
 
 function selectionMade() {
-  if (state === 0) return true;
-  if (state === 1) return isAnyChecked(pianoUI);
-  if (state === 2) return isAnyChecked(drumUI);
-  if (state === 3) return isAnyChecked(guitarUI);
-  return true; 
+  if (state === 0 || state === 1) return true;
+  if (state === 2) return isAnyChecked(pianoUI);
+  if (state === 3) return isAnyChecked(drumUI);
+  if (state === 4) return isAnyChecked(guitarUI);
+  return true;
 }
 
 function isAnyChecked(uiArray) {
@@ -341,7 +338,7 @@ function playAllSelectedStems() {
   userStartAudio();
   for (let row of mixUI) {
     if (row.sound) {
-      row.sound.stop(); 
+      row.sound.stop();
       row.sound.play();
       row.playButton.html("Stop");
       row.playing = true;
@@ -352,15 +349,18 @@ function playAllSelectedStems() {
 function updateUI() {
   hideAllUI();
 
-  if (state === 0) {
-    // nextButton.html("Begin");
-    // nextButton.position(300, height - 75);
-    // nextButton.show();
+  if (state === 1) {
+    nextButton.html("Next");
+    nextButton.position(300, height - 75);
+    backButton.position(120, height - 75);
+    nextButton.show();
+    backButton.show();
   }
 
-  if (state === 1 || state === 2 || state === 3) {
-    let uis = [null, pianoUI, drumUI, guitarUI];
-    uis[state].forEach(row => { row.playButton.show(); row.label.show(); row.checkbox.show(); });
+  if (state === 2 || state === 3 || state === 4) {
+    let currentUI = (state === 2) ? pianoUI : (state === 3) ? drumUI : guitarUI;
+    currentUI.forEach(row => { row.playButton.show(); row.label.show(); row.checkbox.show(); });
+    
     nextButton.html("Next");
     nextButton.position(300, height - 75);
     backButton.position(120, height - 75);
@@ -370,15 +370,15 @@ function updateUI() {
     stopAllButton.show();
   }
 
-  if (state === 4) {
+  if (state === 5) {
     buildMixingUI();
     backButton.position(120, height - 75);
-    nextButton.hide(); 
+    nextButton.hide();
     playAllButton.position(120, height - 160);
     stopAllButton.position(480, height - 75);
     startOverButton.position(300, height - 75);
     recordButton.position(480, height - 160);
-    
+
     masterVolumeSlider.position(120, 475);
     masterPitchSlider.position(500, 320);
 
@@ -402,11 +402,11 @@ function buildMixingUI() {
 
   let selected = getSelectedStems();
   let startX = 120;
-  let startY = 220; 
+  let startY = 220;
 
   for (let i = 0; i < selected.length; i++) {
     let row = { playing: false, sound: selected[i].sound };
-    
+
     row.gainNode = new p5.Gain();
     row.gainNode.connect(masterGain);
     row.sound.disconnect();
@@ -425,12 +425,6 @@ function buildMixingUI() {
     row.volSlider = createSlider(0, 1, 0.8, 0.01);
     row.volSlider.position(startX + 240, startY + 10 + i * 80);
     row.volSlider.size(120);
-    row.volSlider.input(() => {
-      let val = row.volSlider.value();
-      let percent = (val * 100) + '%';
-      row.volSlider.elt.style.setProperty('--fill-percent', percent);
-    });
-    row.volSlider.elt.style.setProperty('--fill-percent', '80%');
 
     mixUI.push(row);
   }
@@ -450,7 +444,7 @@ function toggleRecording() {
     recordButton.html("Record Mix");
     recordButton.style('background-color', '');
     isRecording = false;
-    
+
     setTimeout(() => {
       if (soundFile.duration() > 0) {
         saveSound(soundFile, 'MyMix.wav');
@@ -468,14 +462,11 @@ function resetProject() {
   updateUI();
 }
 
-
-
 function mouseMoved() {
   if (state === 0) {
     let d = dist(mouseX, mouseY, pmouseX, pmouseY);
     totalMovement += d;
-
-    if (totalMovement > 500) {
+    if (totalMovement > 1000) {
       nextScreen();
       totalMovement = 0;
     }
@@ -493,7 +484,7 @@ function keyPressed() {
     if (pianoUI[1]) pianoUI[1].checkbox.checked(true);
     if (drumUI[1]) drumUI[1].checkbox.checked(true);
     if (guitarUI[1]) guitarUI[1].checkbox.checked(true);
-    state = 4;
+    state = 5;
     updateUI();
   }
 
