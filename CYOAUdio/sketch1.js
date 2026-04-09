@@ -139,7 +139,7 @@ function draw() {
   }
   if (state === 3) {
     drawInstrumentPage("Drums", drumUI);
-    image(bbdrums, 650,25, 900, 900);
+    image(bbdrums, 525,25, 900, 900);
   }
   if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
@@ -193,7 +193,7 @@ function createStemRows(uiArray, soundArray, label) {
     row.playButton.size(70, 40);
     row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
 
-    let names = ["Epic", "Funky", "Chill", "Fast", "Slow", "Cool"];
+    let names = ["Epic", "Funky", "Chill", "Fast", "Groovy", "Rock"];
     let name = names[i];
 
     row.label = createSpan(name + " " + label);
