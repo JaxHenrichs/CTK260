@@ -27,10 +27,21 @@ let boombox;
 let boombox2;
 let titleBg;
 let instrumentBg;
-let state = 0; // 0: Title, 1: Instructions, 2: Piano, 3: Drums, 4: Guitar, 5: Mix
-let bbpiano, bbdrums, bbguitar,bbmaster;
+let state = 0; // 0: Title, 1: Instructions, 2: Guitar, 3: Drums, 4: Piano, 5: Mix
+let bbpiano, bbdrums, bbguitar,bbmaster,bbintro;
 
 let totalMovement = 100;
+
+const refWidth = 1536;
+const refHeight = 703;
+
+function scaleX(x) {
+  return (x / refWidth) * width;
+}
+
+function scaleY(y) {
+  return (y / refHeight) * height;
+}
 
 function preload() {
   pianoSounds[0] = loadSound("music/piano1.mp3");
@@ -55,8 +66,12 @@ function preload() {
   font = loadFont("assets/Showpop.ttf");
   titleBg = loadImage("assets/testerfrontbg.jpg");
   instrumentBg = loadImage("assets/instrumentpage.jpg")
-  bbdrums = loadImage("assets/BBdrums.png");
-  bbmaster = loadImage("assets/BBmaster.png");
+  masterbg = loadImage("assets/mastering.jpg");
+  bbdrums = loadImage("assets/BBDrums.png");
+  bbmaster = loadImage("assets/BBMaster.png");
+  bbpiano = loadImage("assets/BBPiano.png");
+  bbguitar = loadImage("assets/BBGuitar.png");
+  bbintro = loadImage("assets/BBIntro.png")
 
 }
 
@@ -113,55 +128,61 @@ function setup() {
   updateUI();
 }
 
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  updateUI();
+}
+
 function draw() {
   if (state === 0) {
-    background(titleBg);
+    image(titleBg, 0, 0, width, height);
     textSize(110);
     fill(255);
-    text("Bunnybox\nStudio", width / 2, height / 3.5);
+    text("Bunnybox\nStudio", width / 2, scaleY(200));
     textSize(18);
-    text("Move your mouse or press any key to begin", width / 2, height / 1.9);
+    text("Move your mouse or press any key to begin", width / 2, scaleY(370));
   }
 
   if (state === 1) {
     background("#333333");
     fill(255);
     textSize(64);
-    text("Instructions", width / 2, 100);
-    textSize(24);
-    let instr = "1. Preview sounds on the following pages.\n" +
-                "2. Check the box of the loop you like best.\n" +
-                "3. Mix your final track in the Mixing Booth!\n\n" +
-                "Press 'Next' to select your Piano.";
-    text(instr, width / 2, height / 2 - 20);
+    text("Instructions", width / 2, scaleY(100));
+    image(bbintro, scaleX(400), scaleY(100), scaleX(700), scaleY(700));
+
   }
 
   if (state === 2) {
-    drawInstrumentPage("Piano", pianoUI);
-  }
-  if (state === 3) {
     drawInstrumentPage("Drums", drumUI);
-    image(bbdrums, 525,25, 900, 900);
+    image(bbdrums, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
   }
+
+  if (state === 3) {
+    drawInstrumentPage("Piano", pianoUI);
+    image(bbpiano, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
+
+  }
+
   if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
+    image(bbguitar, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
 
   }
 
   if (state === 5) {
-    background("#333333");
+    image(masterbg, 0, 0, width, height);
     textSize(64);
     fill(255);
-    text("Mixing Booth", width / 2, 80);
-    image(bbmaster, 800,100, 417, 597);
+    text("Mixing Booth", width / 2, scaleY(80));
+    image(bbmaster, scaleX(800), scaleY(-25), scaleX(651), scaleY(932));
 
     masterGain.amp(masterVolumeSlider.value());
 
     textSize(16);
     fill(255);
-    text("Master Vol", masterVolumeSlider.x + 250, masterVolumeSlider.y - 15);
-    text("Master Pitch", masterPitchSlider.x + 100, masterPitchSlider.y - 120);
-    text("Track Vol", 415, 200);
+    text("Master Vol", masterVolumeSlider.x + masterVolumeSlider.width / 2, masterVolumeSlider.y - scaleY(15));
+    text("Master Pitch", masterPitchSlider.x + scaleX(100), masterPitchSlider.y - scaleY(120));
+    text("Track Vol", scaleX(415), scaleY(200));
 
     for (let row of mixUI) {
       row.gainNode.amp(row.volSlider.value());
@@ -170,9 +191,9 @@ function draw() {
 
     if (isRecording) {
       let duration = (millis() - recordStartTime) / 1000;
-      fill(255, 0, 0);
+      fill(255);
       textSize(36);
-      text("RECORDING: " + nf(duration, 0, 1) + "s", 400, height - 200);
+      text("RECORDING: " + nf(duration, 0, 1) + "s", scaleX(400), height - scaleY(195));
     }
 
     if (getSelectedStems().length === 0) {
@@ -212,19 +233,20 @@ function createStemRows(uiArray, soundArray, label) {
 
 function drawInstrumentPage(title, uiArray) {
   background("#333333");
-  background(instrumentBg);
+  image(instrumentBg, 0, 0, width, height);
   textSize(64);
   fill(255);
-  text(title, width / 2, 80);
+  text(title, width / 2, scaleY(80));
 
-  let startX = 120;
-  let startY = 150;
+  let startX = scaleX(120);
+  let startY = scaleY(150);
+  let spacing = scaleY(81);
 
   for (let i = 0; i < uiArray.length; i++) {
     let row = uiArray[i];
-    row.playButton.position(startX, startY + i * 81);
-    row.label.position(startX + 90, startY + 10 + i * 79.5);
-    row.checkbox.position(startX + 290, startY + 10 + i * 80);
+    row.playButton.position(startX, startY + i * spacing);
+    row.label.position(startX + scaleX(90), startY + scaleY(10) + i * scaleY(79.5));
+    row.checkbox.position(startX + scaleX(290), startY + scaleY(10) + i * scaleY(80));
   }
 }
 
@@ -327,8 +349,8 @@ function prevScreen() {
 
 function selectionMade() {
   if (state === 0 || state === 1) return true;
-  if (state === 2) return isAnyChecked(pianoUI);
-  if (state === 3) return isAnyChecked(drumUI);
+  if (state === 2) return isAnyChecked(drumUI);
+  if (state === 3) return isAnyChecked(pianoUI);
   if (state === 4) return isAnyChecked(guitarUI);
   return true;
 }
@@ -354,20 +376,20 @@ function updateUI() {
 
   if (state === 1) {
     nextButton.html("Next");
-    nextButton.position(300, height - 75);
-    backButton.position(120, height - 75);
+    nextButton.position(scaleX(300), height - scaleY(75));
+    backButton.position(scaleX(120), height - scaleY(75));
     nextButton.show();
     backButton.show();
   }
 
   if (state === 2 || state === 3 || state === 4) {
-    let currentUI = (state === 2) ? pianoUI : (state === 3) ? drumUI : guitarUI;
+    let currentUI = (state === 2) ? drumUI : (state === 3) ? pianoUI : guitarUI;
     currentUI.forEach(row => { row.playButton.show(); row.label.show(); row.checkbox.show(); });
     
     nextButton.html("Next");
-    nextButton.position(300, height - 75);
-    backButton.position(120, height - 75);
-    stopAllButton.position(480, height - 75);
+    nextButton.position(scaleX(300), height - scaleY(75));
+    backButton.position(scaleX(120), height - scaleY(75));
+    stopAllButton.position(scaleX(480), height - scaleY(75));
     nextButton.show();
     backButton.show();
     stopAllButton.show();
@@ -375,15 +397,15 @@ function updateUI() {
 
   if (state === 5) {
     buildMixingUI();
-    backButton.position(120, height - 75);
+    backButton.position(scaleX(120), height - scaleY(75));
     nextButton.hide();
-    playAllButton.position(120, height - 160);
-    stopAllButton.position(480, height - 75);
-    startOverButton.position(300, height - 75);
-    recordButton.position(480, height - 160);
+    playAllButton.position(scaleX(120), height - scaleY(160));
+    stopAllButton.position(scaleX(480), height - scaleY(75));
+    startOverButton.position(scaleX(300), height - scaleY(75));
+    recordButton.position(scaleX(480), height - scaleY(160));
 
-    masterVolumeSlider.position(120, 475);
-    masterPitchSlider.position(500, 320);
+    masterVolumeSlider.position(scaleX(120), scaleY(475));
+    masterPitchSlider.position(scaleX(500), scaleY(320));
 
     backButton.show();
     playAllButton.show();
@@ -404,8 +426,9 @@ function buildMixingUI() {
   mixUI = [];
 
   let selected = getSelectedStems();
-  let startX = 120;
-  let startY = 220;
+  let startX = scaleX(120);
+  let startY = scaleY(220);
+  let spacing = scaleY(80);
 
   for (let i = 0; i < selected.length; i++) {
     let row = { playing: false, sound: selected[i].sound };
@@ -417,17 +440,17 @@ function buildMixingUI() {
 
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
-    row.playButton.position(startX, startY + i * 80);
+    row.playButton.position(startX, startY + i * spacing);
     row.playButton.mousePressed(() => toggleIndividualStem(row, row.sound));
 
     row.label = createSpan(selected[i].label);
-    row.label.position(startX + 90, startY + 10 + i * 80);
+    row.label.position(startX + scaleX(90), startY + scaleY(10) + i * spacing);
     row.label.style('font-family', 'Montserrat, sans-serif');
     row.label.style('font-weight', 'bold');
 
     row.volSlider = createSlider(0, 1, 0.8, 0.01);
-    row.volSlider.position(startX + 240, startY + 10 + i * 80);
-    row.volSlider.size(120);
+    row.volSlider.position(startX + scaleX(240), startY + scaleY(10) + i * spacing);
+    row.volSlider.size(scaleX(120));
 
     mixUI.push(row);
   }
@@ -476,10 +499,15 @@ function mouseMoved() {
   }
 }
 
-function keyPressed() {
+// function mouseClicked(){
+// if (state === 0) {
+//   nextScreen();  
+// }
+
+
+  function keyPressed() {
   if (state === 0) {
     nextScreen();
-    return;
   }
 
   if (key === 'd' || key === 'D') {
