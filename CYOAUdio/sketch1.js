@@ -14,6 +14,10 @@ let startOverButton;
 let recordButton;
 let mixUI = [];
 
+let customDialogOverlay;
+let customDialogMessage;
+let customDialogCloseButton;
+
 let masterVolumeSlider;
 let masterPitchSlider;
 let masterGain;
@@ -87,7 +91,7 @@ function setup() {
   backButton.size(160, 45);
   backButton.mousePressed(prevScreen);
 
-  playAllButton = createButton("Play All Selected Stems");
+  playAllButton = createButton("Play All Stems");
   playAllButton.size(340, 45);
   playAllButton.mousePressed(playAllSelectedStems);
 
@@ -125,12 +129,48 @@ function setup() {
   masterPitchSlider.hide();
 
   textFont(font);
+  createDialogElements();
   updateUI();
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   updateUI();
+}
+
+function createDialogElements() {
+  customDialogOverlay = createDiv();
+  customDialogOverlay.id('customDialog');
+  customDialogOverlay.addClass('custom-dialog-overlay');
+
+  let dialogBox = createDiv();
+  dialogBox.addClass('custom-dialog-box');
+  dialogBox.parent(customDialogOverlay);
+
+  let titleElement = createElement('h2', 'Bunny Box Studio');
+  titleElement.parent(dialogBox);
+
+  customDialogMessage = createP('');
+  customDialogMessage.parent(dialogBox);
+  customDialogMessage.addClass('custom-dialog-text');
+
+  customDialogCloseButton = createButton('OK');
+  customDialogCloseButton.addClass('custom-dialog-button');
+  customDialogCloseButton.mousePressed(hideDialog);
+  customDialogCloseButton.parent(dialogBox);
+
+  customDialogOverlay.hide();
+}
+
+function showDialog(message) {
+  if (!customDialogOverlay) return;
+  customDialogMessage.html(message);
+  customDialogOverlay.show();
+}
+
+function hideDialog() {
+  if (!customDialogOverlay) return;
+  customDialogOverlay.hide();
 }
 
 function draw() {
@@ -205,7 +245,7 @@ function draw() {
   fill(255);
   textSize(14);
   textAlign(RIGHT, BOTTOM);
-  text("Browser size: " + windowWidth + " x " + windowHeight, width - 15, height - 15);
+  // text("Browser size: " + windowWidth + " x " + windowHeight, width - 15, height - 15);
   textAlign(CENTER, CENTER);
 }
 
@@ -333,7 +373,7 @@ function hideAllUI() {
 
 function nextScreen() {
   if (!selectionMade()) {
-    alert("Please select one stem before continuing.");
+    showDialog("Please select one stem before continuing.");
     return;
   }
   stopAllSounds();
@@ -475,7 +515,7 @@ function toggleRecording() {
       if (soundFile.duration() > 0) {
         saveSound(soundFile, 'MyMix.wav');
       } else {
-        alert("No audio was recorded. Please make sure to jam out and play some stems while recording.");
+        showDialog("No audio was recorded. Please make sure to jam out and play some stems while recording.");
       }
     }, 100);
   }
