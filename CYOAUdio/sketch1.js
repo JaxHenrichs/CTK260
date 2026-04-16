@@ -11,6 +11,7 @@ let backButton;
 let playAllButton;
 let stopAllButton;
 let startOverButton;
+let resetMixButton;
 let recordButton;
 let mixUI = [];
 
@@ -103,6 +104,11 @@ function setup() {
   startOverButton.size(160, 45);
   startOverButton.mousePressed(resetProject);
 
+  resetMixButton = createButton("Reset Mix");
+  resetMixButton.size(160, 45);
+  resetMixButton.mousePressed(resetMixSettings);
+  resetMixButton.hide();
+
   recordButton = createButton("Record Mix");
   recordButton.size(160, 45);
   recordButton.mousePressed(toggleRecording);
@@ -119,13 +125,15 @@ function setup() {
   recorder.setInput(masterGain);
   soundFile = new p5.SoundFile();
 
-  masterVolumeSlider = createSlider(0, 1, 0.7, 0.01);
+  masterVolumeSlider = createSlider(0, 1, 0.5, 0.01);
   masterVolumeSlider.size(500);
+  masterVolumeSlider.input(() => snapSlider(masterVolumeSlider, 0.5));
   masterVolumeSlider.hide();
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
   masterPitchSlider.size(180);
   masterPitchSlider.style('transform', 'rotate(-90deg)');
+  masterPitchSlider.input(() => snapSlider(masterPitchSlider, 1.0));
   masterPitchSlider.hide();
 
   textFont(font);
@@ -160,6 +168,14 @@ function createDialogElements() {
   customDialogCloseButton.parent(dialogBox);
 
   customDialogOverlay.hide();
+}
+
+function snapSlider(slider, target, threshold = 0.03) {
+  if (!slider) return;
+  let value = slider.value();
+  if (abs(value - target) < threshold) {
+    slider.value(target);
+  }
 }
 
 function showDialog(message) {
@@ -214,13 +230,13 @@ function draw() {
     textSize(64);
     fill(255);
     text("Mixing Booth", width / 2, scaleY(80));
-    image(bbmaster, scaleX(800), scaleY(-25), scaleX(651), scaleY(932));
+    image(bbmaster, scaleX(800), scaleY(125), scaleX(700), scaleY(700));
 
     masterGain.amp(masterVolumeSlider.value());
 
     textSize(16);
     fill(255);
-    text("Master Vol", masterVolumeSlider.x + masterVolumeSlider.width / 2, masterVolumeSlider.y - scaleY(15));
+    text("Master Vol", masterVolumeSlider.x + masterVolumeSlider.width / 2, masterVolumeSlider.y - scaleY(25));
     text("Master Pitch", masterPitchSlider.x + scaleX(100), masterPitchSlider.y - scaleY(120));
     text("Track Vol", scaleX(415), scaleY(200));
 
@@ -242,11 +258,11 @@ function draw() {
     }
   }
 
-  fill(255);
-  textSize(14);
-  textAlign(RIGHT, BOTTOM);
-  // text("Browser size: " + windowWidth + " x " + windowHeight, width - 15, height - 15);
-  textAlign(CENTER, CENTER);
+  // fill(255);
+  // textSize(14);
+  // textAlign(RIGHT, BOTTOM);
+  // // text("Browser size: " + windowWidth + " x " + windowHeight, width - 15, height - 15);
+  // textAlign(CENTER, CENTER);
 }
 
 
@@ -255,7 +271,7 @@ function createStemRows(uiArray, soundArray, label) {
     let row = { playing: false };
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
-    row.playButton.mousePressed(() => toggleStem(row, soundArray, i));
+    row.playButton.mousePressed(() => toggleStem(row, soundArray, i, uiArray));
 
     let names = ["Epic", "Funky", "Chill", "Jazzy", "Groovy", "Rock"];
     let name = names[i];
@@ -290,11 +306,22 @@ function drawInstrumentPage(title, uiArray) {
   }
 }
 
-function toggleStem(row, soundArray, index) {
+function toggleStem(row, soundArray, index, uiArray) {
   userStartAudio();
   if (!soundArray[index]) return;
 
   if (!row.playing) {
+    // Stop all other stems in this UI array first
+    if (uiArray) {
+      for (let otherRow of uiArray) {
+        if (otherRow !== row && otherRow.playing) {
+          let otherIndex = uiArray.indexOf(otherRow);
+          soundArray[otherIndex].stop();
+          otherRow.playButton.html("Play");
+          otherRow.playing = false;
+        }
+      }
+    }
     soundArray[index].play();
     row.playButton.html("Stop");
     row.playing = true;
@@ -359,7 +386,7 @@ function resetButtons(uiArray) {
 }
 
 function hideAllUI() {
-  [nextButton, backButton, playAllButton, stopAllButton, startOverButton, masterVolumeSlider, masterPitchSlider, recordButton].forEach(b => b.hide());
+  [nextButton, backButton, playAllButton, stopAllButton, startOverButton, resetMixButton, masterVolumeSlider, masterPitchSlider, recordButton].forEach(b => b.hide());
   [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => {
     row.playButton.hide(); row.label.hide(); row.checkbox.hide();
   }));
@@ -440,8 +467,9 @@ function updateUI() {
     backButton.position(scaleX(120), height - scaleY(75));
     nextButton.hide();
     playAllButton.position(scaleX(120), height - scaleY(160));
-    stopAllButton.position(scaleX(480), height - scaleY(75));
+    // stopAllButton.position(scaleX(480), height - scaleY(75));
     startOverButton.position(scaleX(300), height - scaleY(75));
+    resetMixButton.position(scaleX(480), height - scaleY(75));
     recordButton.position(scaleX(480), height - scaleY(160));
 
     masterVolumeSlider.position(scaleX(120), scaleY(475));
@@ -451,6 +479,7 @@ function updateUI() {
     playAllButton.show();
     stopAllButton.show();
     startOverButton.show();
+    resetMixButton.show();
     recordButton.show();
     masterVolumeSlider.show();
     masterPitchSlider.show();
@@ -488,9 +517,10 @@ function buildMixingUI() {
     row.label.style('font-family', 'Montserrat, sans-serif');
     row.label.style('font-weight', 'bold');
 
-    row.volSlider = createSlider(0, 1, 0.8, 0.01);
+    row.volSlider = createSlider(0, 1, 0.5, 0.01);
     row.volSlider.position(startX + scaleX(240), startY + scaleY(10) + i * spacing);
     row.volSlider.size(scaleX(120));
+    row.volSlider.input(() => snapSlider(row.volSlider, 0.5));
 
     mixUI.push(row);
   }
@@ -519,6 +549,15 @@ function toggleRecording() {
       }
     }, 100);
   }
+}
+
+function resetMixSettings() {
+  if (masterVolumeSlider) masterVolumeSlider.value(0.5);
+  if (masterPitchSlider) masterPitchSlider.value(1.0);
+  mixUI.forEach(row => {
+    if (row.volSlider) row.volSlider.value(0.5);
+  });
+  showDialog("Mix Settings Reverted!");
 }
 
 function resetProject() {
