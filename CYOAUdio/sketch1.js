@@ -33,6 +33,7 @@ let boombox2;
 let titleBg;
 let instrumentBg;
 let state = 0; // 0: Title, 1: Instructions, 2: Guitar, 3: Drums, 4: Piano, 5: Mix
+let isAllPlaying = false;
 let bbpiano, bbdrums, bbguitar,bbmaster,bbintro;
 
 let totalMovement = 100;
@@ -125,9 +126,9 @@ function setup() {
   recorder.setInput(masterGain);
   soundFile = new p5.SoundFile();
 
-  masterVolumeSlider = createSlider(0, 1, 0.5, 0.01);
+  masterVolumeSlider = createSlider(0, 1, 1.0, 0.01);
   masterVolumeSlider.size(500);
-  masterVolumeSlider.input(() => snapSlider(masterVolumeSlider, 0.5));
+  masterVolumeSlider.input(() => snapSlider(masterVolumeSlider, 1.0));
   masterVolumeSlider.hide();
 
   masterPitchSlider = createSlider(0.5, 1.5, 1.0, 0.01);
@@ -197,6 +198,7 @@ function draw() {
     text("Bunnybox\nStudio", width / 2, scaleY(200));
     textSize(18);
     text("Move your mouse or press any key to begin", width / 2, scaleY(370));
+    resetMixSettings();
   }
 
   if (state === 1) {
@@ -204,24 +206,28 @@ function draw() {
     fill(255);
     textSize(64);
     text("Instructions", width / 2, scaleY(100));
-    image(bbintro, scaleX(400), scaleY(100), scaleX(700), scaleY(700));
+    image(bbintro, scaleX(400), scaleY(100), scaleX(650), scaleY(650));
+    resetMixSettings();
 
   }
 
   if (state === 2) {
     drawInstrumentPage("Drums", drumUI);
     image(bbdrums, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
+    resetMixSettings();
   }
 
   if (state === 3) {
     drawInstrumentPage("Piano", pianoUI);
     image(bbpiano, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
+    resetMixSettings();
 
   }
 
   if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
     image(bbguitar, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
+    resetMixSettings();
 
   }
 
@@ -230,7 +236,7 @@ function draw() {
     textSize(64);
     fill(255);
     text("Mixing Booth", width / 2, scaleY(80));
-    image(bbmaster, scaleX(800), scaleY(125), scaleX(700), scaleY(700));
+    image(bbmaster, scaleX(700), scaleY(125), scaleX(800), scaleY(800));
 
     masterGain.amp(masterVolumeSlider.value());
 
@@ -323,6 +329,7 @@ function toggleStem(row, soundArray, index, uiArray) {
       }
     }
     soundArray[index].play();
+    soundArray[index].amp(0.5);
     row.playButton.html("Stop");
     row.playing = true;
   } else {
@@ -338,6 +345,7 @@ function toggleIndividualStem(row, sound) {
 
   if (!row.playing) {
     sound.play();
+    sound.amp(0.5);
     row.playButton.html("Stop");
     row.playing = true;
   } else {
@@ -410,6 +418,7 @@ function nextScreen() {
 
 function prevScreen() {
   stopAllSounds();
+  resetMixSettings();
   if (state > 0) state--;
   updateUI();
 }
@@ -428,13 +437,29 @@ function isAnyChecked(uiArray) {
 
 function playAllSelectedStems() {
   userStartAudio();
-  for (let row of mixUI) {
-    if (row.sound) {
-      row.sound.stop();
-      row.sound.play();
-      row.playButton.html("Stop");
-      row.playing = true;
+  if (!isAllPlaying) {
+    // Play all stems
+    for (let row of mixUI) {
+      if (row.sound) {
+        row.sound.stop();
+        row.sound.play();
+        row.playButton.html("Stop");
+        row.playing = true;
+      }
     }
+    playAllButton.html("Stop All Stems");
+    isAllPlaying = true;
+  } else {
+    // Stop all stems
+    for (let row of mixUI) {
+      if (row.sound && row.sound.isPlaying()) {
+        row.sound.stop();
+      }
+      row.playButton.html("Play");
+      row.playing = false;
+    }
+    playAllButton.html("Play All Stems");
+    isAllPlaying = false;
   }
 }
 
@@ -506,6 +531,7 @@ function buildMixingUI() {
     row.gainNode.connect(masterGain);
     row.sound.disconnect();
     row.sound.connect(row.gainNode);
+    row.sound.amp(0.5);
 
     row.playButton = createButton("Play");
     row.playButton.size(70, 40);
@@ -517,10 +543,10 @@ function buildMixingUI() {
     row.label.style('font-family', 'Montserrat, sans-serif');
     row.label.style('font-weight', 'bold');
 
-    row.volSlider = createSlider(0, 1, 0.5, 0.01);
+    row.volSlider = createSlider(0, 1, 1.0, 0.01);
     row.volSlider.position(startX + scaleX(240), startY + scaleY(10) + i * spacing);
     row.volSlider.size(scaleX(120));
-    row.volSlider.input(() => snapSlider(row.volSlider, 0.5));
+    row.volSlider.input(() => snapSlider(row.volSlider, 1.0));
 
     mixUI.push(row);
   }
@@ -552,12 +578,20 @@ function toggleRecording() {
 }
 
 function resetMixSettings() {
-  if (masterVolumeSlider) masterVolumeSlider.value(0.5);
-  if (masterPitchSlider) masterPitchSlider.value(1.0);
+  masterVolumeSlider.value(1.0);
+  masterPitchSlider.value(1.0);
   mixUI.forEach(row => {
-    if (row.volSlider) row.volSlider.value(0.5);
+    row.volSlider.value(1.0);
+    if (row.sound) {
+      row.sound.disconnect();
+      row.sound.connect();
+      row.sound.amp(0.5);
+      row.sound.rate(1.0);
+    }
   });
-  showDialog("Mix Settings Reverted!");
+  // if (state === 5){
+  //   showDialog("Mix Settings Reverted!");
+  // }
 }
 
 function resetProject() {
