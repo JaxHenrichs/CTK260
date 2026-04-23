@@ -27,6 +27,9 @@ let recorder, soundFile;
 let isRecording = false;
 let recordStartTime;
 
+let secretbutton;
+let secretSound;
+
 let font;
 let boombox;
 let boombox2;
@@ -68,6 +71,7 @@ function preload() {
   pianoSounds[5] = loadSound("music/piano6.wav");
   guitarSounds[5] = loadSound("music/guitar6.wav");
   drumSounds[5] = loadSound("music/drums6.wav");
+  secretSound = loadSound("music/honk.mp3");
 
   font = loadFont("assets/Showpop.ttf");
   titleBg = loadImage("assets/testerfrontbg.jpg");
@@ -97,9 +101,13 @@ function setup() {
   playAllButton.size(340, 45);
   playAllButton.mousePressed(playAllSelectedStems);
 
-  stopAllButton = createButton("Stop All");
-  stopAllButton.size(160, 45);
-  stopAllButton.mousePressed(stopAllSounds);
+  // stopAllButton = createButton("Stop All");
+  // stopAllButton.size(160, 45);
+  // stopAllButton.mousePressed(stopAllSounds);
+
+  // stopAllButton = createButton("Play Selected");
+  // stopAllButton.size(200, 45);
+  // stopAllButton.mousePressed(playSelectedStemsG);
 
   startOverButton = createButton("Start Over");
   startOverButton.size(160, 45);
@@ -114,6 +122,12 @@ function setup() {
   recordButton.size(160, 45);
   recordButton.mousePressed(toggleRecording);
   recordButton.hide();
+
+  secretbutton = createButton("");
+  secretbutton.size(25, 25);
+  secretbutton.style('opacity', '0');
+  secretbutton.mousePressed(playSecretSound);
+  secretbutton.hide();
 
   createStemRows(pianoUI, pianoSounds, "Piano");
   createStemRows(drumUI, drumSounds, "Drum");
@@ -236,7 +250,7 @@ function draw() {
     textSize(64);
     fill(255);
     text("Mixing Booth", width / 2, scaleY(80));
-    image(bbmaster, scaleX(700), scaleY(125), scaleX(800), scaleY(800));
+    image(bbmaster, scaleX(700), scaleY(60), scaleX(900), scaleY(900));
 
     masterGain.amp(masterVolumeSlider.value());
 
@@ -317,7 +331,6 @@ function toggleStem(row, soundArray, index, uiArray) {
   if (!soundArray[index]) return;
 
   if (!row.playing) {
-    // Stop all other stems in this UI array first
     if (uiArray) {
       for (let otherRow of uiArray) {
         if (otherRow !== row && otherRow.playing) {
@@ -394,7 +407,7 @@ function resetButtons(uiArray) {
 }
 
 function hideAllUI() {
-  [nextButton, backButton, playAllButton, stopAllButton, startOverButton, resetMixButton, masterVolumeSlider, masterPitchSlider, recordButton].forEach(b => b.hide());
+  [nextButton, backButton, playAllButton, startOverButton, resetMixButton, masterVolumeSlider, masterPitchSlider, recordButton, secretbutton].forEach(b => b.hide());
   [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => {
     row.playButton.hide(); row.label.hide(); row.checkbox.hide();
   }));
@@ -408,7 +421,7 @@ function hideAllUI() {
 
 function nextScreen() {
   if (!selectionMade()) {
-    showDialog("Please select one stem before continuing.");
+    showDialog("Please select a stem before continuing.");
     return;
   }
   stopAllSounds();
@@ -463,6 +476,17 @@ function playAllSelectedStems() {
   }
 }
 
+// function playSelectedStemsG() {
+//   userStartAudio();
+//   stopAllSounds();
+//   let selected = getSelectedStems();
+//   for (let item of selected) {
+//     if (item.sound) {
+//       item.sound.play();
+//     }
+//   }
+// }
+
 function updateUI() {
   hideAllUI();
 
@@ -481,10 +505,10 @@ function updateUI() {
     nextButton.html("Next");
     nextButton.position(scaleX(300), height - scaleY(75));
     backButton.position(scaleX(120), height - scaleY(75));
-    stopAllButton.position(scaleX(480), height - scaleY(75));
+    // stopAllButton.position(scaleX(480), height - scaleY(75));
     nextButton.show();
     backButton.show();
-    stopAllButton.show();
+    // stopAllButton.show();
   }
 
   if (state === 5) {
@@ -492,7 +516,7 @@ function updateUI() {
     backButton.position(scaleX(120), height - scaleY(75));
     nextButton.hide();
     playAllButton.position(scaleX(120), height - scaleY(160));
-    // stopAllButton.position(scaleX(480), height - scaleY(75));
+    secretbutton.position(scaleX(1285), height - scaleY(165));
     startOverButton.position(scaleX(300), height - scaleY(75));
     resetMixButton.position(scaleX(480), height - scaleY(75));
     recordButton.position(scaleX(480), height - scaleY(160));
@@ -502,7 +526,8 @@ function updateUI() {
 
     backButton.show();
     playAllButton.show();
-    stopAllButton.show();
+    secretbutton.show();
+    // stopAllButton.show();
     startOverButton.show();
     resetMixButton.show();
     recordButton.show();
@@ -510,6 +535,17 @@ function updateUI() {
     masterPitchSlider.show();
   }
 }
+
+function playSecretSound() {
+  userStartAudio();
+  if (!secretSound) return;
+  if (secretSound.isPlaying()) {
+    secretSound.stop();
+  }
+  secretSound.play();
+  secretSound.amp(1.0);
+}
+
 
 function buildMixingUI() {
   mixUI.forEach(row => {
