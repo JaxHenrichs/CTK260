@@ -10,6 +10,10 @@ let nextButton;
 let backButton;
 let playAllButton;
 let stopAllButton;
+
+let playSelectedButton;
+let isSelectedPlaying = false;
+
 let startOverButton;
 let resetMixButton;
 let recordButton;
@@ -35,11 +39,14 @@ let boombox;
 let boombox2;
 let titleBg;
 let instrumentBg;
+let masterbg;
 let state = 0; // 0: Title, 1: Instructions, 2: Guitar, 3: Drums, 4: Piano, 5: Mix
 let isAllPlaying = false;
 let bbpiano, bbdrums, bbguitar,bbmaster,bbintro;
 
 let totalMovement = 100;
+
+let amplitude;
 
 const refWidth = 1536;
 const refHeight = 703;
@@ -105,9 +112,10 @@ function setup() {
   // stopAllButton.size(160, 45);
   // stopAllButton.mousePressed(stopAllSounds);
 
-  // stopAllButton = createButton("Play Selected");
-  // stopAllButton.size(200, 45);
-  // stopAllButton.mousePressed(playSelectedStemsG);
+  playSelectedButton = createButton("Play Selected");
+  playSelectedButton.size(200, 45);
+  playSelectedButton.mousePressed(playSelectedStems);
+
 
   startOverButton = createButton("Start Over");
   startOverButton.size(160, 45);
@@ -135,6 +143,9 @@ function setup() {
 
   masterGain = new p5.Gain();
   masterGain.connect();
+
+  amplitude = new p5.Amplitude();
+
 
   recorder = new p5.SoundRecorder();
   recorder.setInput(masterGain);
@@ -212,7 +223,6 @@ function draw() {
     text("Bunnybox\nStudio", width / 2, scaleY(200));
     textSize(18);
     text("Move your mouse or press any key to begin", width / 2, scaleY(370));
-    resetMixSettings();
   }
 
   if (state === 1) {
@@ -221,27 +231,22 @@ function draw() {
     textSize(64);
     text("Instructions", width / 2, scaleY(100));
     image(bbintro, scaleX(400), scaleY(100), scaleX(650), scaleY(650));
-    resetMixSettings();
 
   }
 
   if (state === 2) {
     drawInstrumentPage("Drums", drumUI);
     image(bbdrums, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
-    resetMixSettings();
   }
 
   if (state === 3) {
     drawInstrumentPage("Piano", pianoUI);
     image(bbpiano, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
-    resetMixSettings();
-
   }
 
   if (state === 4) {
     drawInstrumentPage("Guitar", guitarUI);
     image(bbguitar, scaleX(525), scaleY(50), scaleX(900), scaleY(900));
-    resetMixSettings();
 
   }
 
@@ -276,6 +281,19 @@ function draw() {
       textSize(36);
       text("No stems selected.", width / 2, height / 2);
     }
+
+    let level = amplitude.getLevel();
+    let barCount = 40;
+    let barW = width / barCount;
+    noStroke();
+    for (let i = 0; i < barCount; i++) {
+      let seed = i * 1.3 + frameCount * 0.05;
+      let barH = level * noise(seed) * height * 2;
+      let x = i * barW;
+      fill(180, 0, 255, 200);
+      rect(x, height - barH, barW - 3, barH);
+    }
+
   }
 
   // fill(255);
@@ -342,7 +360,7 @@ function toggleStem(row, soundArray, index, uiArray) {
       }
     }
     soundArray[index].play();
-    soundArray[index].amp(0.5);
+    soundArray[index].amp(0.3);
     row.playButton.html("Stop");
     row.playing = true;
   } else {
@@ -368,14 +386,6 @@ function toggleIndividualStem(row, sound) {
   }
 }
 
-function getSelectedStems() {
-  let selected = [];
-  collectSelected(pianoUI, pianoSounds, "Piano", selected);
-  collectSelected(drumUI, drumSounds, "Drum", selected);
-  collectSelected(guitarUI, guitarSounds, "Guitar", selected);
-  return selected;
-}
-
 function collectSelected(uiArray, soundArray, label, selectedArray) {
   for (let i = 0; i < uiArray.length; i++) {
     if (uiArray[i].checkbox.checked()) {
@@ -385,11 +395,59 @@ function collectSelected(uiArray, soundArray, label, selectedArray) {
   }
 }
 
-function handleExclusiveCheck(uiArray, selectedRow) {
-  if (selectedRow.checkbox.checked()) {
-    for (let row of uiArray) {
-      if (row !== selectedRow) row.checkbox.checked(false);
+function getSelectedStems() {
+  let selected = [];
+  collectSelected(pianoUI, pianoSounds, "Piano", selected);
+  collectSelected(drumUI, drumSounds, "Drum", selected);
+  collectSelected(guitarUI, guitarSounds, "Guitar", selected);
+  return selected;
+}
+
+function playSelectedStems() {
+  userStartAudio();
+
+  if (isSelectedPlaying) {
+    let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
+    allSounds.forEach(s => { if (s && s.isPlaying()) s.stop(); });
+    [pianoUI, drumUI, guitarUI, mixUI].forEach(resetButtons);
+    isSelectedPlaying = false;
+    playSelectedButton.html("Play Selected");
+    return;
+  }
+
+  let selected = getSelectedStems();
+  if (selected.length === 0) return;
+
+  for (let item of selected) {
+    if (item.sound) {
+      item.sound.play();
+      item.sound.amp(0.3);
     }
+  }
+  isSelectedPlaying = true;
+  playSelectedButton.html("Stop Selected");
+}
+
+  function handleExclusiveCheck(uiArray, selectedRow) {
+    if (selectedRow.checkbox.checked()) {
+      for (let row of uiArray) {
+        if (row !== selectedRow) row.checkbox.checked(false);
+      }
+    }
+
+  if (isSelectedPlaying) {
+    let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
+    allSounds.forEach(s => { if (s && s.isPlaying()) s.stop(); });
+    [pianoUI, drumUI, guitarUI, mixUI].forEach(resetButtons);
+
+    let selected = getSelectedStems();
+    for (let item of selected) {
+      if (item.sound) {
+        item.sound.play();
+        item.sound.amp(0.3);
+      }
+    }
+    playSelectedButton.html("Stop Selected");
   }
 }
 
@@ -397,6 +455,8 @@ function stopAllSounds() {
   let allSounds = [...pianoSounds, ...drumSounds, ...guitarSounds];
   allSounds.forEach(s => { if (s && s.isPlaying()) s.stop(); });
   [pianoUI, drumUI, guitarUI, mixUI].forEach(resetButtons);
+  isSelectedPlaying = false;
+  playSelectedButton.html("Play Selected");
 }
 
 function resetButtons(uiArray) {
@@ -407,7 +467,7 @@ function resetButtons(uiArray) {
 }
 
 function hideAllUI() {
-  [nextButton, backButton, playAllButton, startOverButton, resetMixButton, masterVolumeSlider, masterPitchSlider, recordButton, secretbutton].forEach(b => b.hide());
+  [nextButton, backButton, playAllButton, playSelectedButton, startOverButton, resetMixButton, masterVolumeSlider, masterPitchSlider, recordButton, secretbutton].forEach(b => b.hide());
   [pianoUI, drumUI, guitarUI].forEach(ui => ui.forEach(row => {
     row.playButton.hide(); row.label.hide(); row.checkbox.hide();
   }));
@@ -476,16 +536,6 @@ function playAllSelectedStems() {
   }
 }
 
-// function playSelectedStemsG() {
-//   userStartAudio();
-//   stopAllSounds();
-//   let selected = getSelectedStems();
-//   for (let item of selected) {
-//     if (item.sound) {
-//       item.sound.play();
-//     }
-//   }
-// }
 
 function updateUI() {
   hideAllUI();
@@ -509,6 +559,8 @@ function updateUI() {
     nextButton.show();
     backButton.show();
     // stopAllButton.show();
+    playSelectedButton.position(scaleX(480), height - scaleY(75));
+    playSelectedButton.show();
   }
 
   if (state === 5) {
@@ -615,20 +667,18 @@ function toggleRecording() {
 
 function resetMixSettings() {
   masterVolumeSlider.value(1.0);
+  masterGain.amp(1.0);
   masterPitchSlider.value(1.0);
   mixUI.forEach(row => {
-    row.volSlider.value(1.0);
+    if (row.volSlider) row.volSlider.value(1.0);
+    if (row.gainNode) row.gainNode.amp(1.0);
     if (row.sound) {
-      row.sound.disconnect();
-      row.sound.connect();
-      row.sound.amp(0.5);
       row.sound.rate(1.0);
+      row.sound.amp(0.5);
     }
   });
-  // if (state === 5){
-  //   showDialog("Mix Settings Reverted!");
-  // }
 }
+
 
 function resetProject() {
   stopAllSounds();
@@ -671,4 +721,4 @@ function mouseMoved() {
   if (key === 'r' || key === 'R') {
     location.reload();
   }
-}
+} 
